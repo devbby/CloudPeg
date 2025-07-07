@@ -1,0 +1,62 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<script type="text/javascript" src="~/lib/vue/dist/vue.global.prod.js"></script>
+
+<div class="text-center">
+    <button id="btn" class="btn btn-success">GO!</button> 
+</div>
+
+<div id="app" class="container">
+    <template>
+        
+        <vue-finder></vue-finder>
+    </template>
+</div>
+
+<script defer>
+    
+    
+    
+    $('#btn').on('click', async function (e) {
+
+
+        let info = await fetch('/Home/Process')
+            .then(res => res.json())
+        console.log(info);
+
+    })
+
+    // $(document).ready( async () => {
+    //     // let { default:VueFinder } = await import('/lib/vuefinder/dist/vuefinder.min.js');
+    //     // MainApp.use(VueFinder);
+    //
+    //     MainApp.component('VueFinder', Vue.defineAsyncComponent(() =>
+    //         import('/lib/vuefinder/dist/vuefinder.min.js')
+    //     ))
+    //    
+    //     MainApp.mount("#app");
+    // });
+    
+    
+</script>
+<script type="importmap">
+  { "imports": {
+      "vue":               "~/lib/vue/dist/vue.esm-browser.prod.js", 
+  } }
+</script>
+
+<script type="text/javascript" src="~/js/mainApp.js" asp-append-version="true"></script>
+
+<script type="module">
+  import { createApp } from 'vue'
+  import VueFinder from '~/lib/vuefinder/dist/vuefinder'
+  
+  
+  document.addEventListener('DOMContentLoaded', () => {
+      MainApp.component('VueFinder', VueFinder)
+      
+      MainApp.mount("#app")
+  } );
+</script>

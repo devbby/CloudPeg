@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "gulp": "5.0.0",
+    "del": "7.1.0"
+  },
+  "dependencies": {
+    "vue": "^3.5.17"
+  }
+}

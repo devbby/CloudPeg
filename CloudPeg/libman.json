@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "defaultProvider": "jsdelivr",
+  "libraries": [
+    {
+      "library": "vuefinder@2.7.1",
+      "destination": "wwwroot/lib/vuefinder"
+    },
+    {
+      "library": "vue@3.5.17",
+      "destination": "wwwroot/lib/vue"
+    }
+  ]
+}
