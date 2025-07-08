@@ -24,7 +24,7 @@ public class FsService : IFsService
 
     private async Task<FsResponse> GetFilePreview(string adapter, string path)
     {
-        var storage = GetStorages().FirstOrDefault(x => x.Name == adapter);
+        var storage = GetStorages().FirstOrDefault(x => path.StartsWith(x.Prefix));
         string targetPath = storage.GetRealPath(path);
         var bytes = await File.ReadAllBytesAsync(targetPath);
         return new FileFsResponse
@@ -99,9 +99,16 @@ public class FsService : IFsService
 
     private List<FsStorage> GetStorages()
     {
-        return [
-            new FsStorage("Storage1", new DirectoryInfo("../../").FullName){},
-            new FsStorage("Storage2", new DirectoryInfo("../../../../").FullName),
-        ];
+        var dir = new DirectoryInfo("fsroot");
+        var list = new List<FsStorage>();
+        foreach (var file in dir.GetFileSystemInfos())
+        {
+            if (file.Attributes.HasFlag(FileAttributes.Directory))
+            {
+                list.Add(new FsStorage(file.Name, file.FullName));
+            }
+        }
+
+        return list;
     }
 }
