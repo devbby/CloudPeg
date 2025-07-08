@@ -11,6 +11,7 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "crypto": "^1.0.1",
     "vue": "^3.5.17",
     "vuefinder": "^1.2.8"
   },

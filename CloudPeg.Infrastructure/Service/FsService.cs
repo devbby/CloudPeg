@@ -46,7 +46,7 @@ public class FsService : IFsService
         {
             return new FsResponse
             {
-                Adapter = null,
+                Adapter = storages.First().Name,
                 Storages = storages.Select(x=>x.Name).ToList(),
                 Dirname = $"{storages.First().Name}://",
                 Files = GetFilesForStorage(storages.First(), null)
@@ -58,7 +58,7 @@ public class FsService : IFsService
         {
             Adapter = storage.Name,
             Storages = storages.Select(x=> x.Name).ToList(),
-            Dirname = path ?? storage.Prefix,
+            Dirname = path?.Replace("\\", "/") ?? storage.Prefix,
             Files = GetFilesForStorage(storage, path)
         };
 

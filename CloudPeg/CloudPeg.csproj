@@ -41,4 +41,8 @@
       <ProjectReference Include="..\CloudPeg.Infrastructure\CloudPeg.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="CloudPeg.UI\dist\" />
+    </ItemGroup>
+
 </Project>
