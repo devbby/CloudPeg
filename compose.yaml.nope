@@ -1,10 +1,10 @@
 ﻿services:
   cloudpeg:
     
-    image: cloudpeg
+    image: cloudpeg-slim
     build:
       context: .
-      dockerfile: CloudPeg/Dockerfile
+      dockerfile: Dockerfile
     network_mode: host
     devices:
       - /dev/dri
