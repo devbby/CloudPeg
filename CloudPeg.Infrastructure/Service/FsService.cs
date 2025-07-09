@@ -16,11 +16,19 @@ public class FsService : IFsService
             "preview" => GetFilePreview(adapter, path),
             "download" => GetFilePreview(adapter, path),
             
-            "newfolder" => CreateNewFolder(adapter, path, name),
+            "subfolders" => GetSubfolders(adapter, path),
+            "download_archive" => GetAsArchive(adapter, path),
+            "search" => GetSearchResults(adapter, path),
+            
+            "newfolder" => CreateNewFolder(adapter, path, postData.Name),
             "newfile" => CreateNewFile(adapter, path, postData),
             "move" =>  MoveResource(adapter, path, postData),
             "rename" =>  RenameResource(adapter, path, postData),
             "save" => SaveResource(adapter, path, postData),
+            "delete" => DeleteResource(adapter, path, postData),
+            "upload" => UploadResource(adapter, path, postData),
+            "archive"=> ArchiveResources(adapter, path, postData),
+            "unarchive" => UnarchiveResources(adapter, path, postData),
             _ => Task.FromResult<FsResponse>(new FsBadResponse("Not supported"))
 
 
@@ -29,22 +37,66 @@ public class FsService : IFsService
         return await response;
     }
 
+    private Task<FsResponse> GetSearchResults(string adapter, string path)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task<FsResponse> GetAsArchive(string adapter, string path)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task<FsResponse> GetSubfolders(string adapter, string path)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task<FsResponse> UnarchiveResources(string adapter, string path, VFPostRequest postData)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task<FsResponse> ArchiveResources(string adapter, string path, VFPostRequest postData)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Task<FsResponse> UploadResource(string adapter, string path, VFPostRequest postData)
+    {
+        throw new NotImplementedException();
+    }
+
+    private async Task<FsResponse> DeleteResource(string adapter, string path, VFPostRequest postData)
+    {
+        foreach (var item in postData.Items)
+        {
+            var resource = GetResourceFromStorage(adapter, item.Path);
+            if (resource is null) return new FsBadResponse("File/Directory not found in storage");
+            if ((File.GetAttributes(resource.RealPath) & FileAttributes.Directory) == FileAttributes.Directory)
+            {
+                Directory.Delete(resource.RealPath);
+            }
+            else
+            {
+                File.Delete(resource.RealPath);
+            }
+        }
+        return await GetIndex(adapter, path);
+    }
+
     private async Task<FsResponse> SaveResource(string adapter, string path, VFPostRequest postData)
     {
         var resource = GetResourceFromStorage(adapter, path);
         if (resource is null) return new FsBadResponse("File/Directory not found in storage");
-
         await File.WriteAllTextAsync(resource.RealPath, postData.Content);
-        
-        return await GetIndex(adapter, "Storage1://\\daniel\\");
-
+        return await GetFilePreview(adapter, path);
     }
 
     private async Task<FsResponse> RenameResource(string adapter, string path, VFPostRequest postData)
     { 
         var resource = GetResourceFromStorage(adapter, postData.Item);
         if (resource is null) return new FsBadResponse("File/Directory not found in storage");
-
         var newPath = Path.Join( new FileInfo(resource.RealPath).DirectoryName, postData.Name);
         if (resource.Type == "dir")
         {
@@ -53,9 +105,6 @@ public class FsService : IFsService
         {
             File.Move(resource.RealPath, newPath);
         }
-        
-        
-        
         return await GetIndex(adapter, path);
     }
 
@@ -229,22 +278,27 @@ public class FsService : IFsService
 
         var files = new DirectoryInfo(targetPath).GetFileSystemInfos().Select(x =>
             {
-                new FileExtensionContentTypeProvider().TryGetContentType(x.Name, out var contentType);
-                var fsr = new FsResource
+                if (!x.Name.StartsWith("."))
                 {
-                    Path = x.FullName.Replace(storage.Path, storage.Prefix),
-                    Type = (x.Attributes & FileAttributes.Directory) != 0 ? "dir" : "file",
-                    FileSize = FileHelper.GetSize(x.FullName),
-                    LastModified = new DateTimeOffset(x.LastWriteTime).ToUnixTimeSeconds(),
-                    Extension = x.Extension,
-                    Storage = storage.Name,
-                    BaseName = x.Name,
-                    MimeType = contentType
-                };
+                    new FileExtensionContentTypeProvider().TryGetContentType(x.Name, out var contentType);
+                    var fsr = new FsResource
+                    {
+                        Path = x.FullName.Replace(storage.Path, storage.Prefix),
+                        Type = (x.Attributes & FileAttributes.Directory) != 0 ? "dir" : "file",
+                        FileSize = FileHelper.GetSize(x.FullName),
+                        LastModified = new DateTimeOffset(x.LastWriteTime).ToUnixTimeSeconds(),
+                        Extension = x.Extension,
+                        Storage = storage.Name,
+                        BaseName = x.Name,
+                        MimeType = contentType
+                    };
                 
-                return fsr;
+                    return fsr;
+                }
+
+                return null;
             }
-        ).ToList();
+        ).Where(x=> x!= null).ToList();
 
 
         return files;
@@ -261,6 +315,9 @@ public class FsService : IFsService
                 list.Add(new FsStorage(file.Name, file.FullName));
             }
         }
+        #if DEBUG
+        list.Add(new  FsStorage("debug", "/home/danny"));
+        #endif
 
         return list;
     }
