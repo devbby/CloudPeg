@@ -14,6 +14,10 @@ public class FsStorage
 
     public string GetRealPath(string path)
     {
-        return path.Replace(Prefix, Path);
+        var cleanPath = path.Replace(Prefix, "");
+        
+        return System.IO.Path.Join(Path, cleanPath);
     }
+
+    
 }

@@ -21,4 +21,6 @@ public class FsResource
     
     [JsonPropertyName("mime_type")]
     public string MimeType { get; set; }
+
+    public string RealPath { get; set; }
 }
