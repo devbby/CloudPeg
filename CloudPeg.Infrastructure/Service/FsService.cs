@@ -1,6 +1,8 @@
+using System.Reflection.Metadata.Ecma335;
 using CloudPeg.Application;
 using CloudPeg.Application.Service;
 using CloudPeg.Domain.Model;
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.AspNetCore.StaticFiles;
 
 namespace CloudPeg.Infrastructure.Service;
@@ -8,7 +10,7 @@ namespace CloudPeg.Infrastructure.Service;
 public class FsService : IFsService
 {
     public async Task<FsResponse> ProcessRequest(string query, string adapter, string path, string name,
-        List<FsResource> items, VFPostRequest postData)
+        List<FsResource> items, VFPostRequest postData, byte[]? fileContent = null, string filter = "")
     {
         Task<FsResponse> response = query switch
         {
@@ -18,7 +20,7 @@ public class FsService : IFsService
             
             "subfolders" => GetSubfolders(adapter, path),
             "download_archive" => GetAsArchive(adapter, path),
-            "search" => GetSearchResults(adapter, path),
+            "search" => GetSearchResults(adapter, path, filter),
             
             "newfolder" => CreateNewFolder(adapter, path, postData.Name),
             "newfile" => CreateNewFile(adapter, path, postData),
@@ -26,7 +28,7 @@ public class FsService : IFsService
             "rename" =>  RenameResource(adapter, path, postData),
             "save" => SaveResource(adapter, path, postData),
             "delete" => DeleteResource(adapter, path, postData),
-            "upload" => UploadResource(adapter, path, postData),
+            "upload" => UploadResource(adapter, path, postData, fileContent),
             "archive"=> ArchiveResources(adapter, path, postData),
             "unarchive" => UnarchiveResources(adapter, path, postData),
             _ => Task.FromResult<FsResponse>(new FsBadResponse("Not supported"))
@@ -37,9 +39,110 @@ public class FsService : IFsService
         return await response;
     }
 
-    private Task<FsResponse> GetSearchResults(string adapter, string path)
+    private async Task<FsResponse> GetSearchResults(string adapter, string path, string filter)
     {
-        throw new NotImplementedException();
+        
+        var storages = GetStorages();
+        
+        if(storages.Count == 0) return new FsResponse();
+        
+         
+        var storage = storages.FirstOrDefault(x =>  x.Name.Equals(adapter, StringComparison.InvariantCultureIgnoreCase) ) ??
+                      storages.First();
+
+        return new FsResponse
+        {
+            
+            Adapter = storage.Name,
+            Storages = storages.Select(x=> x.Name).ToList(),
+            Dirname = path,
+            Files = SearchResource(filter)
+        }; 
+         
+    }
+
+    private List<FsResource> SearchResource(string filter)
+    {
+        var storages = GetStorages();
+        var list = new List<FsResource>();
+        foreach (var storage in storages)
+        {
+            var path = storage.Path;
+            var files = FindInPath(path, filter);
+
+            foreach (var file in files)
+            {
+                var info = new FileInfo(file.BaseName);
+                new FileExtensionContentTypeProvider().TryGetContentType(info.FullName, out var contentType);
+                
+                file.Storage = storage.Name;
+                file.Adapter = storage.Name;
+                file.RealPath = file.BaseName;
+                file.BaseName = info.Name;
+                file.Extension = info.Extension;
+                file.Visibility = "public";
+                file.LastModified = new DateTimeOffset(info.LastWriteTime).ToUnixTimeSeconds();
+                file.Path = storage.GetStoragePath(info.FullName);
+                file.MimeType = contentType;
+                file.Type = "file";
+                file.Dir = storage.GetStoragePath(info.DirectoryName);
+            }
+            
+            list.AddRange(files);
+        }
+
+        return list;
+    }
+    
+    private List<FsResource> FindInPath(string startPath, string filter)
+    {
+        var list = new List<FsResource>();
+        if (!Directory.Exists(startPath))
+            return list;
+
+        try
+        {
+            string[] files = Directory.GetFiles(startPath);
+            string[] subdirectories = Directory.GetDirectories(startPath);
+
+            foreach (string subdirectory in subdirectories)
+            {
+                var result = FindInPath(subdirectory, filter);
+                list.AddRange(result);
+            }
+            
+            var matchingFiles = files
+                .Where(x=>x.Contains(filter, StringComparison.InvariantCultureIgnoreCase))
+                .Select(x=>new FsResource
+                {
+                    Path = null,
+                    Type = null,
+                    FileSize = 0,
+                    Visibility = null,
+                    LastModified = 0,
+                    Extension = null,
+                    Storage = null,
+                    BaseName = x,
+                    MimeType = null,
+                    RealPath = null,
+                    Adapter = null
+                })
+                
+                .ToList();
+            list.AddRange(matchingFiles);
+            return list;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+        }
+        catch (PathTooLongException ex)
+        {
+        }
+        catch (Exception ex)
+        {
+        }
+
+        return list;
     }
 
     private Task<FsResponse> GetAsArchive(string adapter, string path)
@@ -47,9 +150,20 @@ public class FsService : IFsService
         throw new NotImplementedException();
     }
 
-    private Task<FsResponse> GetSubfolders(string adapter, string path)
+    private async Task<FsResponse> GetSubfolders(string adapter, string path)
     {
-        throw new NotImplementedException();
+        var files = GetFilesForStorage(GetStorage(adapter), path);
+        var list = new List<FsResource>();
+        foreach (var file in files)
+        {
+            if(file.Type == "dir")
+                list.Add(file);
+        }
+
+        return new FsSubfoldersResponse()
+        {
+            Folders = list
+        };
     }
 
     private Task<FsResponse> UnarchiveResources(string adapter, string path, VFPostRequest postData)
@@ -59,12 +173,66 @@ public class FsService : IFsService
 
     private Task<FsResponse> ArchiveResources(string adapter, string path, VFPostRequest postData)
     {
+
+        var zip = new FastZip();
+        // zip.CreateZip();
+        // using (var fs = File.Create("html-archive.zip"))
+        // using (var outStream = new ZipOutputStream(fs))
+        // {
+        //     foreach (var item in postData.Items)
+        //     {
+        //         var resourceItem = GetResourceFromStorage(adapter, item.Path);
+        //         using var memoryStream = new FileStream(resourceItem.RealPath, FileMode.Open);
+        //         outStream.PutNextEntry(new ZipEntry(resourceItem.BaseName));
+        //         memoryStream.CopyTo(outStream);
+        //     }
+        //         
+        // }
+        //     
+            
+        
+         
+        
+        
+        
         throw new NotImplementedException();
     }
 
-    private Task<FsResponse> UploadResource(string adapter, string path, VFPostRequest postData)
+    private async Task<FsResponse> UploadResource(string adapter, string path, VFPostRequest postData, byte[]? fileContent)
     {
-        throw new NotImplementedException();
+        var fileLocation = CleanPathStructure(postData.Name);
+        var target = GetPathFromStorage(adapter, Path.Join(path, fileLocation));
+        if(File.Exists(target))
+            return new FsBadResponse("File already exists");
+
+        if (fileContent is null) 
+            return new FsBadResponse("No data to upload");
+
+        var dirPath = Path.GetDirectoryName(target);
+        if(dirPath is null)
+            return new FsBadResponse("Ensuring directory structure failed");
+            
+        Directory.CreateDirectory(dirPath);
+        
+        await File.WriteAllBytesAsync(target, fileContent);
+        return await GetIndex(adapter, path);
+    }
+
+    private string CleanPathStructure(string path)
+    {
+        var forward = path.Split('/');
+        if (forward.Length > 1)
+        {
+            path = Path.Join(forward);
+        }
+        
+        var back = path.Split('\\');
+        if (back.Length > 1)
+        {
+            path = Path.Join(back);
+        }
+
+        return path;
     }
 
     private async Task<FsResponse> DeleteResource(string adapter, string path, VFPostRequest postData)
@@ -75,7 +243,7 @@ public class FsService : IFsService
             if (resource is null) return new FsBadResponse("File/Directory not found in storage");
             if ((File.GetAttributes(resource.RealPath) & FileAttributes.Directory) == FileAttributes.Directory)
             {
-                Directory.Delete(resource.RealPath);
+                Directory.Delete(resource.RealPath, true);
             }
             else
             {

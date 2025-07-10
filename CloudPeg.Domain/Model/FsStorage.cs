@@ -19,5 +19,10 @@ public class FsStorage
         return System.IO.Path.Join(Path, cleanPath);
     }
 
-    
+
+    public string GetStoragePath(string realPath)
+    {
+        var target = realPath.Replace(Path, "");
+        return System.IO.Path.Join(Prefix, target);
+    }
 }

@@ -17,12 +17,12 @@ public class FsController : Controller
     }
     
     [HttpGet("fs/")]
-    public async Task<IActionResult> Index(string q, string adapter, string path, string name, List<FsResource> items, string item)
+    public async Task<IActionResult> Index(string q, string adapter, string path, string name, List<FsResource> items, string filter)
     {
         FsResponse response = null;
         try
         {
-            response = await _fsService.ProcessRequest(q, adapter, path, name, items, null);
+            response = await _fsService.ProcessRequest(q, adapter, path, name, items, null,null, filter);
 
             if (response is FsBadResponse badResponse)
                 return BadRequest(badResponse);
@@ -58,9 +58,7 @@ public class FsController : Controller
         {
             return BadRequest(e.Message);
         }
-        
-        
-        
+         
         return Json(response);
     }
     
@@ -68,12 +66,14 @@ public class FsController : Controller
     [HttpPost("fs/")]
     [FormContentType]
     public async Task<IActionResult> Index(string q, string adapter, string path, string name, List<FsResource> items,
-        [FromForm] VueFinderRequest postData )
+        [FromForm] VueFinderRequest postData)
     {
         FsResponse response = null;
         try
         {
-            response = await _fsService.ProcessRequest(q, adapter, path, name, items, postData);
+            await using var ms = new MemoryStream();
+            await postData.File.CopyToAsync(ms);
+            response = await _fsService.ProcessRequest(q, adapter, path, name, items, postData, ms.ToArray());
 
             if (response is FsBadResponse badResponse)
                 return BadRequest(badResponse);
@@ -85,33 +85,9 @@ public class FsController : Controller
         {
             return BadRequest(e.Message);
         }
-        
-        
-        
+         
         return Json(response);
     }
     
-    [HttpPost("[controller]/q={upload}")]
-    public async Task<IActionResult> Upload(  [FromForm]IFormFile file)
-    {
-        // FsResponse response = null;
-        // try
-        // {
-        //     // response = await _fsService.ProcessRequest(q, adapter, path, name, items, postData);
-        //     //
-        //     // if (response is FsBadResponse badResponse)
-        //     //     return BadRequest(badResponse);
-        //     //
-        //     // if (response is FileFsResponse resp)
-        //     //     return File(resp.Bytes, "application/octet-stream");
-        // }
-        // catch (Exception e)
-        // {
-        //     return BadRequest(e.Message);
-        // }
-        
-        
-        
-        return Json(new FsOkResponse());
-    }
+   
 }

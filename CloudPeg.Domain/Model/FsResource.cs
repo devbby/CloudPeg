@@ -23,4 +23,7 @@ public class FsResource
     public string MimeType { get; set; }
 
     public string RealPath { get; set; }
+
+    public string Adapter { get; set; }
+    public string Dir { get; set; }
 }
