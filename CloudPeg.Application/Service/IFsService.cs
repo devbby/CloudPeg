@@ -6,4 +6,7 @@ public interface IFsService
 { 
     Task<FsResponse> ProcessRequest(string query, string adapter, string path, string name, List<FsResource> items,
         VFPostRequest postData, byte[]? fileContent = null, string filter = "");
+
+    Task<FsResource?> GetFileRealPath(string storagePath);
+    string GetParentDirectory(FsResource? resource);
 }

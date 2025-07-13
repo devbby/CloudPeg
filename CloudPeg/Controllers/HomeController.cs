@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using CloudPeg.Application.Command;
+using CloudPeg.Application.Service;
+using CloudPeg.Domain.Model;
 using Microsoft.AspNetCore.Mvc;
 using CloudPeg.Models;
 using FFMpegCore;
@@ -10,18 +13,20 @@ namespace CloudPeg.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
+    private readonly IFsService _fsService;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(ILogger<HomeController> logger, IFsService fsService)
     {
         _logger = logger;
+        _fsService = fsService;
     }
     
-    public async Task<IActionResult> Process()
+    [HttpPost]
+    public async Task<IActionResult> Process([FromBody]ProcessFileCommand command)
     {
-        
-         
-        
-        var mediaInfo = await FFProbe.AnalyseAsync("test.mkv"); 
+        var resource = await _fsService.GetFileRealPath(command.FilePaths[0]);
+        var parentDir = _fsService.GetParentDirectory(resource);
+        var mediaInfo = await FFProbe.AnalyseAsync(resource.RealPath); 
         
         Console.WriteLine("V Streams:" + mediaInfo.VideoStreams.Count);
         Console.WriteLine("A Streams:" + mediaInfo.AudioStreams.Count);
@@ -32,13 +37,13 @@ public class HomeController : Controller
         // -hwaccel_output_format vaapi -i test.mkv -c:v h264_vaapi tmp.mp4
 
         var processor =  FFMpegArguments
-            .FromFileInput("test.mkv", true, options =>
+            .FromFileInput(resource.RealPath, true, options =>
                 {
                     options.WithHardwareAcceleration(HardwareAccelerationDevice.VAAPI);
                     options.WithCustomArgument("-hwaccel_output_format vaapi");
                 }
             )
-            .OutputToFile("converted2.mp4",true, options => options
+            .OutputToFile(Path.Join(parentDir, resource.BaseName+".converted.mp4"),true, options => options
                        
                 .WithVideoCodec(FFMpeg.GetCodec("h264_vaapi"))
                 

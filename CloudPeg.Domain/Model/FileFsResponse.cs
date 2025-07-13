@@ -8,5 +8,5 @@ public class FileFsResponse : FsResponse
     public required string Name { get; set; }
     
     public List<FsFolder> Folders { get; set; }
-    
+    public FileStream Stream { get; set; }
 }

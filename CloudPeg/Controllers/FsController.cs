@@ -28,7 +28,9 @@ public class FsController : Controller
                 return BadRequest(badResponse);
         
             if (response is FileFsResponse resp)
-                return File(resp.Bytes, "application/octet-stream");
+            { 
+                return new FileStreamResult(resp.Stream, "application/octet-stream"){FileDownloadName = resp.Name};
+            }        
         }
         catch (Exception e)
         {
@@ -52,7 +54,7 @@ public class FsController : Controller
                 return BadRequest(badResponse);
         
             if (response is FileFsResponse resp)
-                return File(resp.Bytes, "application/octet-stream");
+                return new FileStreamResult(resp.Stream, "application/octet-stream"){FileDownloadName = resp.Name};
         }
         catch (Exception e)
         {
@@ -79,7 +81,7 @@ public class FsController : Controller
                 return BadRequest(badResponse);
         
             if (response is FileFsResponse resp)
-                return File(resp.Bytes, "application/octet-stream");
+                return new FileStreamResult(resp.Stream, "application/octet-stream"){FileDownloadName = resp.Name};
         }
         catch (Exception e)
         {

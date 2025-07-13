@@ -39,6 +39,24 @@ public class FsService : IFsService
         return await response;
     }
 
+    public async Task<FsResource?> GetFileRealPath(string storagePath)
+    {
+        var adapter = GetAdapterFromPath(storagePath);
+        return GetResourceFromStorage(adapter,storagePath);
+    }
+
+    public string GetParentDirectory(FsResource? resource)
+    {
+        return new FileInfo(resource?.RealPath).Directory?.FullName;
+    }
+
+    private string GetAdapterFromPath(string storagePath)
+    {
+        var index = storagePath.IndexOf("://");
+        storagePath = storagePath.Substring(0,index);
+        return storagePath;
+    }
+
     private async Task<FsResponse> GetSearchResults(string adapter, string path, string filter)
     {
         
@@ -343,14 +361,16 @@ public class FsService : IFsService
     {
         var storage = GetStorages().FirstOrDefault(x => path.StartsWith(x.Prefix));
         string targetPath = storage.GetRealPath(path);
-        var bytes = await File.ReadAllBytesAsync(targetPath);
+        // var bytes = await File.ReadAllBytesAsync(targetPath);
+        var fileStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096,  FileOptions.SequentialScan);
         return new FileFsResponse
         {
             Adapter = null,
             Storages = null,
             Dirname = null,
             Files = null,
-            Bytes = bytes,
+            Bytes = null,
+            Stream = fileStream,
             Name = new FileInfo(targetPath).Name,
         };
         

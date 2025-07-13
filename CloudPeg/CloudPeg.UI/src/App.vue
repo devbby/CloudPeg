@@ -1,29 +1,114 @@
-<script setup lang="ts">
-const request = "/fs";
+<script  lang="ts">
 
-const handleSelectButton = {
-  // show select button
-  active: true,
-  // allow multiple selection
-  multiple: true,
-  // handle click event
-  click: (items:any, event:any) => {
-    if (!items.length) {
-      alert('No item selected');
-      return;
-    }
-    alert('Selected: ' + items[0].path);
-    console.log(items, event);
+import {  defineComponent, inject} from "vue";
+
+export default defineComponent({
+  setup()  {
+
   },
-};
 
+  components: {},
+
+  data():{
+    request: string,
+    currentView: string,
+    selectedItems: any[]
+  }{
+    return {
+      request: "/fs",
+      selectedItems: [],
+      currentView: 'main2',
+    }
+  },
+
+  async mounted(){
+
+  },
+
+  computed:{
+
+  },
+
+  methods:{
+
+    handleSelectButton(){
+
+      // show select button
+      // this.active: true,
+      // // allow multiple selection
+      // multiple: true,
+      // // handle click event
+      // click: (items:any, event:any) => {
+      //   if (!items.length) {
+      //     alert('No item selected');
+      //     return;
+      //   }
+      //
+      //   for (const item of items) {
+      //     alert('Selected: ' + item.path);
+      //   }
+      //   console.log(items, event);
+      // }
+    },
+    
+    onResourceSelected(items: any) {
+      this.selectedItems = items;
+      console.log(items);
+    },
+    
+    async onProcessFile(){
+      
+      await this.processFile(this.selectedItems.map(x=>x.path))
+    },
+
+   
+    async processFile(filePaths: string[]){
+
+      let data ={
+        filePaths
+      }
+      return await fetch(`/Home/Process`,{method: 'POST',headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data)})
+          .then(async (response) => {
+            if (response.ok) {
+              return response.json();
+            }
+            let errorBody = "";
+            await response.text().then(body => {
+              errorBody = body;
+            });
+            throw new Error(errorBody);
+          }).then(async value => {
+
+            return value;
+          }).catch(error => {
+            alert(error);
+          });
+    },
+   
+ 
+  }
+});
+ 
 </script>
 
 <template>
-  <h2>Hello World</h2>
+  <h2>CloudPeg</h2>
+  <div v-for="item in selectedItems">{{item.basename}}</div>
+  
+  <div class="container" style="max-height: 300px; height: 300px">
+    <div class="row">
+      <div class="col">
+        <template v-if="selectedItems.length > 0">
+          <button v-on:click="onProcessFile" class="btn btn-secondary"> Process </button>
+        </template>
+      </div>
+    </div>
+    
+  </div>
+  
   <div id="fs-container">
     <vue-finder
-        id='my_vuefinder'  :url="request" :request="request" theme="light" :select-button="handleSelectButton"
+        id='my_vuefinder' v-on:select="onResourceSelected" :url="request" :request="request" theme="light" :select-button="handleSelectButton"
 
     />
   </div>
