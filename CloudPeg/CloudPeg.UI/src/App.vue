@@ -1,10 +1,10 @@
 <script  lang="ts">
 
 import {  defineComponent, inject} from "vue";
-
+import {HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel} from "@microsoft/signalr";
 export default defineComponent({
-  setup()  {
-
+   setup()  {
+ 
   },
 
   components: {},
@@ -23,6 +23,38 @@ export default defineComponent({
 
   async mounted(){
 
+    const connection = new HubConnectionBuilder()
+        .withUrl("/VideoProcessor")
+        .withAutomaticReconnect()
+        .configureLogging(LogLevel.Information)
+        .build();
+
+    // connection.onclose(error => {
+    //   console.assert(connection.state === HubConnectionState.Disconnected);
+    //   console.log('Connection closed due to error. Try refreshing this page to restart the connection', error);
+    // });
+    //
+    // connection.onreconnecting(error => {
+    //   console.assert(connection.state === HubConnectionState.Reconnecting);
+    //   console.log('Connection lost due to error. Reconnecting.', error);
+    // });
+    //
+    //
+    connection.on('VideoProcessorConnected', res => {
+      console.log("VideoProcessor connected! Ready ");
+    });
+    //
+    // connection.onreconnected(connectionId => {
+    //   console.assert(connection.state === HubConnectionState.Connected);
+    //   console.log('Connection reestablished. Connected with connectionId', connectionId);
+    // });
+
+    await connection.start().then(async()=>{
+      await connection.send("ConnectToVideoProcessor")
+
+    })
+     
+     
   },
 
   computed:{

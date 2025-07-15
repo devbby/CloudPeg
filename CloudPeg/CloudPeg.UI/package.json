@@ -13,7 +13,8 @@
   "dependencies": {
     "crypto": "^1.0.1",
     "vue": "^3.5.17",
-    "vuefinder": "2.7.1"
+    "vuefinder": "2.7.1",
+    "@microsoft/signalr": "latest"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

@@ -1,4 +1,5 @@
 using CloudPeg.Application.Service;
+using CloudPeg.Hubs;
 using CloudPeg.Infrastructure.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,7 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<IFsService, FsService>();
+builder.Services.AddSingleton<IProcessingQueue, ProcessingQueue>();
 
+builder.Services.AddSignalR();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -29,6 +32,6 @@ app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
+app.MapHub<VideoProcessorHub>("/VideoProcessor");
 
 app.Run();
