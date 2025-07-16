@@ -4,5 +4,5 @@ namespace CloudPeg.Application.Service;
 
 public interface IProcessingQueue
 {
-    Queue<ProcessingInfo> GetQueue();
+    List<ProcessingInfo> GetQueue();
 }

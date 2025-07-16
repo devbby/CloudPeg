@@ -1,9 +1,9 @@
 using CloudPeg.Application.Service;
 using Microsoft.AspNetCore.SignalR;
 
-namespace CloudPeg.Hubs;
+namespace CloudPeg.Application.Hub;
 
-public class VideoProcessorHub : Hub
+public class VideoProcessorHub : Microsoft.AspNetCore.SignalR.Hub
 {
     private readonly IProcessingQueue _processingQueue;
 
@@ -15,7 +15,7 @@ public class VideoProcessorHub : Hub
     public async Task ConnectToVideoProcessor( )
     {
         var queue = _processingQueue.GetQueue();
-        await Clients.Caller.SendAsync("VideoProcessorConnected", queue, default);
+        await Clients.Caller.SendAsync("VideoProcessorConnected", queue);
         
     }
 }

@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <PackageReference Include="FFMpegCore" Version="5.2.0" />
+      <PackageReference Include="MediatR" Version="12.5.0" />
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.7" />
     </ItemGroup>
 
@@ -44,6 +45,7 @@
 
     <ItemGroup>
       <Folder Include="CloudPeg.UI\dist\" />
+      <Folder Include="Hubs\" />
     </ItemGroup>
 
 </Project>

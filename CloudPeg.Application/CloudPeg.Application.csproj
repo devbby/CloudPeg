@@ -10,4 +10,17 @@
       <ProjectReference Include="..\CloudPeg.Domain\CloudPeg.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="MediatR.Contracts">
+        <HintPath>..\..\..\.nuget\packages\mediatr.contracts\2.0.1\lib\netstandard2.0\MediatR.Contracts.dll</HintPath>
+      </Reference>
+      <Reference Include="Microsoft.AspNetCore.SignalR.Core">
+        <HintPath>..\..\..\.nuget\packages\microsoft.aspnetcore.app.ref\9.0.5\ref\net9.0\Microsoft.AspNetCore.SignalR.Core.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="12.5.0" />
+    </ItemGroup>
+
 </Project>

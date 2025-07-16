@@ -43,6 +43,10 @@ export default defineComponent({
     connection.on('VideoProcessorConnected', res => {
       console.log("VideoProcessor connected! Ready ");
     });
+
+    connection.on('videoprocessorstatusnotified', params => {
+      console.log(params);
+    });
     //
     // connection.onreconnected(connectionId => {
     //   console.assert(connection.state === HubConnectionState.Connected);

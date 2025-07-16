@@ -6,10 +6,25 @@ namespace CloudPeg.Infrastructure.Service;
 public class ProcessingQueue : IProcessingQueue
 {
     public Queue<ProcessingInfo> Queue { get; set; }
+
+
+    public ProcessingQueue()
+    {
+        Queue = new  Queue<ProcessingInfo>()
+        {
+            
+        };
+        
+        Queue.Enqueue(new  ProcessingInfo()
+        {
+            Status = ProcessingStatus.Enqueued
+        });
+    }
     
-    public Queue<ProcessingInfo> GetQueue()
+    
+    public List<ProcessingInfo> GetQueue()
     {
         
-        return Queue;
+        return Queue.ToList();
     }
 }
