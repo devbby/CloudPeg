@@ -2,6 +2,8 @@
 
 import {  defineComponent, inject} from "vue";
 import {HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel} from "@microsoft/signalr";
+import {ProcessingInfo} from "../../wwwroot/js/Models.ts";
+ 
 export default defineComponent({
    setup()  {
  
@@ -12,12 +14,14 @@ export default defineComponent({
   data():{
     request: string,
     currentView: string,
-    selectedItems: any[]
+    selectedItems: any[],
+    selectedItem: ProcessingInfo | undefined
   }{
     return {
       request: "/fs",
       selectedItems: [],
       currentView: 'main2',
+      selectedItem: undefined
     }
   },
 
@@ -88,20 +92,22 @@ export default defineComponent({
     },
     
     onResourceSelected(items: any) {
-      this.selectedItems = items;
+      this.selectedItem = new ProcessingInfo(items[0], true);
       console.log(items);
     },
     
     async onProcessFile(){
-      
-      await this.processFile(this.selectedItems.map(x=>x.path))
+      if(this.selectedItem !== undefined){
+        await this.processFile(this.selectedItem.file.path, this.selectedItem.hwAcceleration, )
+      }
     },
 
    
-    async processFile(filePaths: string[]){
+    async processFile(filePath: string, enableHardwareAcceleration: boolean){
 
       let data ={
-        filePaths
+        filePath,
+        enableHardwareAcceleration
       }
       return await fetch(`/Home/Process`,{method: 'POST',headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data)})
           .then(async (response) => {
@@ -129,12 +135,19 @@ export default defineComponent({
 
 <template>
   <h2>CloudPeg</h2>
-  <div v-for="item in selectedItems">{{item.basename}}</div>
+  <div v-if="selectedItem"> 
+     <span> 
+      <span>{{selectedItem.file?.basename}} </span>
+      <input class="ms-2" type="checkbox" v-model="selectedItem.hwAcceleration"/>
+      
+    </span>
+   
+  </div>
   
   <div class="container" style="max-height: 300px; height: 300px">
     <div class="row">
       <div class="col">
-        <template v-if="selectedItems.length > 0">
+        <template v-if="selectedItem">
           <button v-on:click="onProcessFile" class="btn btn-secondary"> Process </button>
         </template>
       </div>

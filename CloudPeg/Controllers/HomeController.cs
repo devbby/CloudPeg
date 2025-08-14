@@ -5,6 +5,7 @@ using CloudPeg.Domain.Model;
 using Microsoft.AspNetCore.Mvc;
 using CloudPeg.Models;
 using FFMpegCore;
+using FFMpegCore.Arguments;
 using FFMpegCore.Enums;
 using Microsoft.AspNetCore.Components;
 
@@ -24,7 +25,7 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<IActionResult> Process([FromBody]ProcessFileCommand command)
     {
-        var resource = await _fsService.GetFileRealPath(command.FilePaths[0]);
+        var resource = await _fsService.GetFileRealPath(command.FilePath);
         var parentDir = _fsService.GetParentDirectory(resource);
         var mediaInfo = await FFProbe.AnalyseAsync(resource.RealPath); 
         
@@ -39,24 +40,50 @@ public class HomeController : Controller
         var processor =  FFMpegArguments
             .FromFileInput(resource.RealPath, true, options =>
                 {
-                    options.WithHardwareAcceleration(HardwareAccelerationDevice.VAAPI);
-                    options.WithCustomArgument("-hwaccel_output_format vaapi");
+                    if (command.EnableHardwareAcceleration)
+                    {
+                        options.WithHardwareAcceleration(HardwareAccelerationDevice.VAAPI);
+                        options.WithCustomArgument("-hwaccel_output_format vaapi");
+                        
+                        // options.WithVideoCodec(mediaInfo.Format.FormatLongName);
+                    }
+                    options.WithCustomArgument("-vaapi_device /dev/dri/renderD128");
+                    
                 }
             )
-            .OutputToFile(Path.Join(parentDir, resource.BaseName+".converted.mp4"),true, options => options
-                       
-                .WithVideoCodec(FFMpeg.GetCodec("h264_vaapi"))
-                
-                
+            .OutputToFile(Path.Join(parentDir, resource.BaseName+".hevc.converted.mp4"),true, options =>
+                {
+                    // options.WithVideoCodec(FFMpeg.GetCodec("h264_vaapi"));
+                    options.WithVideoCodec(FFMpeg.GetCodec("hevc"));
+                    // options.WithVideoCodec(VideoCodec.LibX265);
+                   //options.WithCustomArgument("-hwaccel_output_format mp4");
+                   // options.WithCustomArgument("-vf \"format=nv12,hwupload,scale_vaapi=w=1920:h=1080\"");
+                   // options.WithCustomArgument("-vf \"format=nv12,hwupload \"");
+                    options.SelectStreams(
+                    mediaInfo.VideoStreams.Select(x=>x.Index)
+                        .Union(mediaInfo.AudioStreams.Select(x=>x.Index)
+                            //.Union(mediaInfo.SubtitleStreams.Select(x=>x.Index))
+                        )
+                    );
+                    options.WithVideoBitrate((int)mediaInfo.VideoStreams.First().BitRate);
+                    options.WithVideoFilters(filter =>
+                    {
+                        filter.Scale(VideoSize.FullHd);
+                    });
                 // .WithSpeedPreset(Speed.Fast)
                 // .WithVideoBitrate(4000)
                 // .WithCustomArgument("-profile:v high")
                 // .WithCustomArgument("-bufsize 8000k")
                 // .WithCustomArgument("-g 50")
-                // .WithAudioCodec(AudioCodec.Aac)
+                //options.WithAudioCodec(AudioCodec.Aac);
+                options.WithAudioCodec(FFMpeg.GetCodec("libopus"));
+                options.WithAudioFilters(filterOptions =>
+                    filterOptions.Pan(2, "c0=FL+0.30*FC+0.30*LFE+0.2*BL+0.2*BR|c1=FR+0.30*FC+0.30*LFE+0.2*BL+0.2*BR"));
                 // .WithAudioBitrate(128)
                 // .WithAudioSamplingRate(44100)
-            ).WithLogLevel(FFMpegLogLevel.Debug) 
+                }
+            )
+            //.WithLogLevel(FFMpegLogLevel.Error) 
             .NotifyOnProgress((percentage) =>
             {
                 Console.WriteLine($"Progress: {percentage}%");
@@ -66,7 +93,8 @@ public class HomeController : Controller
         
         await processor.ProcessAsynchronously(true, new FFOptions
             {
-                // LogLevel = FFMpegLogLevel.Verbose,
+                
+                //LogLevel = FFMpegLogLevel.Error,
                 WorkingDirectory = Environment.CurrentDirectory,
                 
 
