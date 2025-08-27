@@ -9,6 +9,10 @@
     {
       "library": "vue@3.5.17",
       "destination": "wwwroot/lib/vue"
+    },
+    {
+      "library": "bootstrap-icons@1.13.1",
+      "destination": "wwwroot/lib/bootstrap-icons"
     }
   ]
 }

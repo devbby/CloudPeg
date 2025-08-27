@@ -11,6 +11,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IFsService, FsService>();
 builder.Services.AddSingleton<IProcessingQueue, ProcessingQueue>();
 builder.Services.AddSingleton<IProcessingService, ProcessingService>();
+builder.Services.AddSingleton<IProcessingOptionsService, ProcessingOptionsService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddMediatR(config =>

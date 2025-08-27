@@ -11,6 +11,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Reference Include="FFMpegCore">
+        <HintPath>..\..\..\.nuget\packages\ffmpegcore\5.2.0\lib\netstandard2.0\FFMpegCore.dll</HintPath>
+      </Reference>
       <Reference Include="Microsoft.AspNetCore.StaticFiles">
         <HintPath>..\..\..\.nuget\packages\microsoft.aspnetcore.app.ref\9.0.5\ref\net9.0\Microsoft.AspNetCore.StaticFiles.dll</HintPath>
       </Reference>
