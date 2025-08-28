@@ -20,7 +20,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="FFMpegCore" Version="5.2.0" />
       <PackageReference Include="MediatR" Version="12.5.0" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.8" />
     </ItemGroup>
 
 </Project>
