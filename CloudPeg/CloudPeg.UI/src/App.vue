@@ -4,6 +4,8 @@ import {  defineComponent, inject} from "vue";
 import {HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel} from "@microsoft/signalr";
 import {ProcessingInfo, QueueItem} from "../../wwwroot/js/Models.ts";
 import ProcessingStatus from "@/components/ProcessingStatus.vue";
+import moment from "moment";
+
  
 export default defineComponent({
    
@@ -19,8 +21,10 @@ export default defineComponent({
     selectedItems: any[],
     selectedItem: ProcessingInfo | undefined,
     queue: QueueItem[] | undefined,
+    selectedQueueItem: QueueItem | undefined,
     templates: any,
-    selectedTemplate: any
+    selectedTemplate: any,
+    modalProcessInfo: any,
   }{
     return {
       request: "/fs",
@@ -29,7 +33,9 @@ export default defineComponent({
       selectedItem: undefined,
       queue: undefined,
       templates: undefined,
-      selectedTemplate: undefined
+      selectedTemplate: undefined,
+      modalProcessInfo: undefined,
+      selectedQueueItem: undefined
     }
   },
 
@@ -41,6 +47,8 @@ export default defineComponent({
         .withAutomaticReconnect()
         .configureLogging(LogLevel.Information)
         .build();
+
+    this.modalProcessInfo =  this.$refs.modalProcessInfo;
 
     // connection.onclose(error => {
     //   console.assert(connection.state === HubConnectionState.Disconnected);
@@ -113,7 +121,14 @@ export default defineComponent({
         await this.processFile(this.selectedItem.file.path, this.selectedTemplate, )
       }
     },
-    
+
+    onShowProcessingInfo(item: QueueItem){
+
+      this.selectedQueueItem = item;
+      
+      $(this.modalProcessInfo).modal("show")
+      
+    },
     
     async onProcessingCancelled(item: QueueItem){
       
@@ -154,7 +169,9 @@ export default defineComponent({
         filePath,
         template
       }
-      return await fetch(`/Home/Process`,{method: 'POST',headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data)})
+      return await fetch(`/Home/Process`,
+          {
+            method: 'POST',headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data)})
           .then(async (response) => {
             if (response.ok) {
               return response.json();
@@ -196,6 +213,11 @@ export default defineComponent({
           });
       
       
+    },
+
+    getFormattedDateTime(date: string){
+      
+      return moment(date).format("DD/MM/YYY HH:mm:ss")
     }
  
   }
@@ -227,12 +249,13 @@ export default defineComponent({
       <div class="col-6">
         <small class="text-muted ">QUEUE</small>
         
-          <div >
+          <div>
             <div v-for="item in queue">
-              <processing-status :status="item.status"></processing-status>
+              <processing-status class="processing-status" v-on:click="onShowProcessingInfo(item)" :status="item.status"></processing-status>
               <span class="ms-3">{{item.processRequest.resource.basename}}</span>
               <span v-if="item.status === 2" class="ms-3">{{item.processRequest.progress}} %</span>
               <span v-on:click="onProcessingCancelled(item)" v-if="item.status === 2" class="ms-3 link link-danger">Cancel</span>
+              <span class="ms-3">{{getFormattedDateTime(item.created)}}</span>
             </div>
           </div>
       
@@ -265,11 +288,41 @@ export default defineComponent({
 
     />
   </div>
-    
+
+
+
+
+  <div ref="modalProcessInfo" class="modal" tabindex="-1">
+    <div class="modal-dialog" >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <processing-status class="me-2" :status="selectedQueueItem?.status"></processing-status>
+            {{selectedQueueItem?.processRequest.resource.basename}}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p> {{selectedQueueItem?.info}} </p>
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
 </template>
 
 <style scoped> 
 
-#fs-container {   
-}
+  .processing-status{
+    cursor: pointer;   
+  }
+  .modal-content{
+    width: 682px;
+  }
+  #fs-container {   
+  }
 </style>

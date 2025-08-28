@@ -27,9 +27,11 @@ export class QueueItem {
     status: number
     created: any
     processRequest: ProcessRequest;
-    constructor(status: number, created: any, processRequest: ProcessRequest) {
+    info: string;
+    constructor(status: number, created: any, processRequest: ProcessRequest,info: string ) {
         this.status = status;
         this.created = created;
         this.processRequest = processRequest;
+        this.info = info;
     }
 }
