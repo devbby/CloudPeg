@@ -21,6 +21,6 @@ public class ProcessingInfo
     public void SetError(string message)
     {
         Status = ProcessingStatus.Failed;
-        Info = message;
+        Info += message;
     }
 }

@@ -505,6 +505,7 @@ public class FsService : IFsService
         }
         #if DEBUG
         list.Add(new  FsStorage("debug", "/home/danny"));
+        list.Add(new  FsStorage("test", "/mnt/unlocked/libraries"));
         #endif
 
         return list;

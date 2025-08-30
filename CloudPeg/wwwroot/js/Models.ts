@@ -1,4 +1,5 @@
 export class ProcessingInfo{
+    mediaInfo: MediaInfo | undefined;
     constructor(item: any, hardwareAcceleration: boolean) {
         this.file = item;
         this.hwAcceleration = hardwareAcceleration;
@@ -6,19 +7,31 @@ export class ProcessingInfo{
 
     file: any
     hwAcceleration: boolean
+    
+    setMediaInfo(info: MediaInfo){
+        this.mediaInfo = info;        
+    }
 }
 
 export class ProcessRequest{
+    
+    id: string;
     
     progress: number;
     
     resource: {
         basename: string;
     }
+
+    processingStarted: string;
+    processingEnded: string;
     
-    constructor(resource: any, progress: number) {
+    constructor(id: string, resource: any, progress: number, processingStarted: string, processingEnded: string) {
+        this.id = id;
         this.resource = resource;
         this.progress = progress;
+        this.processingStarted = processingStarted;
+        this.processingEnded = processingEnded;
     }
 }
 
@@ -34,4 +47,59 @@ export class QueueItem {
         this.processRequest = processRequest;
         this.info = info;
     }
+}
+
+export class MediaInfo {
+    primaryVideoIndex : number;
+    primaryAudioIndex : number;
+    primarySubtitleIndex : number;
+    videoStreams: any[];
+    audioStreams: any[];
+    subtitleStreams: any[];
+    
+    
+    constructor(primaryVideoIndex: number, primaryAudioIndex: number, primarySubtitleIndex: number,
+                videoStreams: any[], audioStreams: any[], subtitleStreams: any[]) {
+        this.primaryVideoIndex = primaryVideoIndex;
+        this.primaryAudioIndex = primaryAudioIndex;
+        this.primarySubtitleIndex = primarySubtitleIndex;
+        this.videoStreams = videoStreams;
+        this.audioStreams = audioStreams;
+        this.subtitleStreams = subtitleStreams;
+
+    }
+    
+    getPrimarySubtitleCodec(){
+
+        let index = this.primarySubtitleIndex;
+
+        if(this.subtitleStreams.length < 1){
+            return undefined;
+        }
+
+        if(this.subtitleStreams[index] === undefined || index === -1){
+            index = 0;
+        }
+
+        return this.subtitleStreams[index].codecName;
+
+    }
+    
+    getPrimarySubtitleLanguage(){
+        let index = this.primarySubtitleIndex;
+        
+        if(this.subtitleStreams.length < 1){
+            return undefined;
+        }
+        
+        if(this.subtitleStreams[index] === undefined || index === -1){
+            index = 0;
+        }
+        
+        return this.subtitleStreams[index].language;
+    }
+    getMediaInfoSubStreamCount(){
+        return this.subtitleStreams.length;
+    }
+    
 }

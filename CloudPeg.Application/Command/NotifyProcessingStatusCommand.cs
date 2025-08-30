@@ -27,8 +27,8 @@ public class NotifyProcessingStatusCommandHandler : IRequestHandler<NotifyProces
     public Task Handle(NotifyProcessingStatusCommand request, CancellationToken cancellationToken)
     {
         return _videoProcessorHub.Clients.All.SendAsync(
-            VideoProcessorHubEvents.VideoProcessorStatusNotified.ToString(), 
-            request.ProcessingInfos, 
+            nameof(VideoProcessorHubEvents.VideoProcessorStatusNotified), 
+            request.ProcessingInfos.OrderByDescending(x=>x.Created), 
             cancellationToken: cancellationToken);
     }
 }

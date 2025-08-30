@@ -15,7 +15,7 @@ public class VideoProcessorHub : Microsoft.AspNetCore.SignalR.Hub
     public async Task ConnectToVideoProcessor( )
     {
         var queue = _processingQueue.GetQueue();
-        await Clients.Caller.SendAsync("VideoProcessorConnected", queue);
+        await Clients.Caller.SendAsync("VideoProcessorConnected", queue.OrderByDescending(x=>x.Created).ToList());
         
     }
 }

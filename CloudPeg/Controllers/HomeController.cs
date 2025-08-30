@@ -8,6 +8,7 @@ using FFMpegCore;
 using FFMpegCore.Arguments;
 using FFMpegCore.Enums;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace CloudPeg.Controllers;
 
@@ -33,14 +34,8 @@ public class HomeController : Controller
         var parentDir = _fsService.GetParentDirectory(resource);
         var mediaInfo = await FFProbe.AnalyseAsync(resource.RealPath); 
         var processRequest = new ProcessingRequest(resource, 
-            command.Template, parentDir, mediaInfo);
-        Console.WriteLine("V Streams:" + mediaInfo.VideoStreams.Count);
-        Console.WriteLine("A Streams:" + mediaInfo.AudioStreams.Count);
-        Console.WriteLine("Format:" + mediaInfo.Format.FormatLongName);
-        Console.WriteLine("Format:" + mediaInfo.Format.BitRate);
-        
-        // ffmpeg -loglevel verbose -y -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi -i test.mp4 -c:v h264_vaapi tmp.mp4
-        // -hwaccel_output_format vaapi -i test.mkv -c:v h264_vaapi tmp.mp4
+            command.Template, parentDir, mediaInfo, command.VideoStreams, command.AudioStreams, command.SubtitleStreams);
+         
         await _processingQueueService.EnqueueForProcessing(processRequest);
        
         
@@ -50,18 +45,43 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<IActionResult> CancelProcessing([FromBody] ProcessingInfo processRequest)
     {
-        var items = _processingQueueService.GetQueue().Where(x =>
-            x.ProcessRequest.Resource.RealPath == processRequest.ProcessRequest.Resource.RealPath
-            && x.ProcessRequest.Resource.BaseName == processRequest.ProcessRequest.Resource.BaseName);
-
-        foreach (var found in items)
+        
+        await _processingQueueService.CancelProcessing(processRequest.ProcessRequest.Id);
+        
+       
+        return Json(new {});
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> RemoveEnqueuedItem([FromBody] ProcessingInfo processRequest)
+    {
+        _processingQueueService.RemoveFromQueue(processRequest.ProcessRequest.Id);
+        return Json(new {});
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> GetMediaInfo([FromBody] ProcessFileCommand processRequest)
+    {
+        if (processRequest?.FilePath is null)
         {
-            found.Status = ProcessingStatus.Completed;        
-            await found.ProcessRequest.CancellationTokenSource.CancelAsync(); 
+            return Json(new {});
         }
+        var resource = await _fsService.GetFileRealPath(processRequest.FilePath);
 
+        if (resource.Type != "file")
+            return Json(new { });
 
-    return Json(new {});
+        try
+        {
+            var mediaInfo = await FFProbe.AnalyseAsync(resource.RealPath);
+            var info = new MediaInfo(mediaInfo);
+            return Json(info);
+        }
+        catch (Exception e)
+        {
+            
+        } 
+        return Json(new { });
     }
 
     public IActionResult Index()
