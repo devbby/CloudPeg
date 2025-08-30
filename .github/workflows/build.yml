@@ -39,7 +39,7 @@ jobs:
 
     - name: Restore npm client dependencies
       run: |
-        cd ./CloudPeg.UI
+        cd ./CloudPeg/CloudPeg.UI
         npm install
       
     - name: Build
