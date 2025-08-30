@@ -31,8 +31,16 @@ jobs:
       run: |
         cd ./CloudPeg
         libman restore         
+      
+    - name: Restore npm dependencies
+      run: |
+        cd ./CloudPeg
+        npm install
 
-
+    - name: Restore npm client dependencies
+      run: |
+        cd ./CloudPeg.UI
+        npm install
       
     - name: Build
       run: dotnet build --no-restore
