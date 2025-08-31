@@ -380,22 +380,22 @@ export default defineComponent({
                     <span class="bi bi-film me-2"></span> Video stream
                     <div class="ms-4">
                       <div >
-                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].codecName}} </span>
+                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.codecName}} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">FPS</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].frameRate}} </span>
+                        <span><small class="text-muted">FPS</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.frameRate }} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">SIZE</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].width}}x{{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].height}} </span>
+                        <span><small class="text-muted">SIZE</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.width}}x{{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.height}} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">LANGUAGE</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].language}} </span>
+                        <span><small class="text-muted">LANGUAGE</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.language}} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">VIDEO STREAMS</small> {{ selectedItem?.mediaInfo.videoStreams.length}} </span>
+                        <span><small class="text-muted">VIDEO STREAMS</small> {{ selectedItem?.mediaInfo?.videoStreams?.length}} </span>
                       
                         <div>
-                          <template v-for="video in selectedItem?.mediaInfo.videoStreams" >
+                          <template v-for="video in selectedItem?.mediaInfo?.videoStreams" >
                             <input type="checkbox" class="video-toggle btn-check" :index="video.index" :id="'btn-video-check-'+video.index" checked :value="video" autocomplete="off">
                             <label class="btn btn-sm ms-1" :for="'btn-video-check-'+video.index">
                               <span class=" bi bi-film me-2"></span>
@@ -411,15 +411,15 @@ export default defineComponent({
                     <span class="bi bi-headphones me-2"></span> Audio stream
                     <div class="ms-4">
                       <div>
-                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo.audioStreams[0].codecName  }} </span>
+                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo?.getPrimaryAudioStream()?.codecName  }} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">CHANNELS</small> {{ selectedItem?.mediaInfo.audioStreams[0].channels }}  {{ selectedItem?.mediaInfo.audioStreams[0].channelLayout }}</span>
+                        <span><small class="text-muted">CHANNELS</small> {{ selectedItem?.mediaInfo?.getPrimaryAudioStream()?.channels }}  {{ selectedItem?.mediaInfo?.getPrimaryAudioStream()?.channelLayout }}</span>
                       </div>
                       <div>
-                        <span><small class="text-muted">AUDIO STREAMS</small> {{ selectedItem?.mediaInfo.audioStreams.length}} </span>
+                        <span><small class="text-muted">AUDIO STREAMS</small> {{ selectedItem?.mediaInfo?.audioStreams?.length}} </span>
                         <div>
-                          <template v-for="audio in selectedItem?.mediaInfo.audioStreams" >
+                          <template v-for="audio in selectedItem?.mediaInfo?.audioStreams" >
                             <input type="checkbox" class=" audio-toggle btn-check" :index="audio.index"  :id="'btn-audio-check-'+audio.index" checked :value="audio" autocomplete="off">
                             <label class="btn btn-sm ms-1" :for="'btn-audio-check-'+audio.index">
                               <span class=" bi bi-headphones me-2 "></span>
@@ -442,7 +442,7 @@ export default defineComponent({
                       <div>
                         <span><small class="text-muted">SUBTITLE STREAMS</small> {{ selectedItem?.mediaInfo?.getMediaInfoSubStreamCount() }} </span>
                         <div>
-                          <template v-for="sub in selectedItem?.mediaInfo.subtitleStreams" >
+                          <template v-for="sub in selectedItem?.mediaInfo?.subtitleStreams" >
                             <input type="checkbox" class="sub-toggle btn-check" :index="sub.index" :id="'btn-sub-check-'+sub.index" checked :value="sub" autocomplete="off">
                             <label class="btn btn-sm ms-1" :for="'btn-sub-check-'+sub.index">
                               <span class=" bi bi-badge-cc-fill me-2"></span>
