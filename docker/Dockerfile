@@ -34,17 +34,28 @@ WORKDIR "/src/CloudPeg"
 RUN dotnet publish "./CloudPeg.csproj" -c Release -o /app/publish_output /p:UseAppHost=false
 
 
+
 # Stage 2: Create the smaller runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
+# FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-noble AS final
 
-RUN apk update && \
-    apk add --no-cache \
-    ffmpeg \
-    intel-media-driver && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    gnupg \
+#   software-properties-common \
+    ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+ 
+#RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/3bf863cc.pub
+#RUN add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/ /"
+ 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    #cuda-toolkit \
+    intel-media-va-driver-non-free   && \
+    rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8080
-EXPOSE 8081
 EXPOSE 5000
 
 WORKDIR /app
