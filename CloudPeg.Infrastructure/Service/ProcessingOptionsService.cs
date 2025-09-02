@@ -152,6 +152,34 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Size = "1080p",
                 UseHardwareAcceleration = false,
             },
+            
+            new() {
+                Name = "NVENC HEVC Defaults",
+                EncoderVideoCodec = "hevc_nvenc", 
+                HwDevice = "CUDA",
+                UseHardwareAcceleration = true,
+            },
+            
+            new() {
+                Name = "NVENC HEVC 1080p HQ, software scaling",
+                EncoderVideoCodec = "hevc_nvenc", 
+                HwDevice = "CUDA",
+                UseHardwareAcceleration = true,
+                
+                HwDecoderArguments = new List<string>()
+                {
+                    // "-hwaccel_output_format cuda" // for scale_npp
+                },
+                
+                HwEncoderArguments = new List<string>()
+                {
+                    // "-vf scale_npp=width=1920:height=1080", // must be enabled in ffmpeg build
+                    "-vf scale=1920:1080",
+                    "-preset p7",
+                    "-rc:v constqp", // constant quality
+                    "-qp 18"
+                },
+            },
             // new(){
             //     Name = "1080p H264 CPU",
             //     Codec = "h264",

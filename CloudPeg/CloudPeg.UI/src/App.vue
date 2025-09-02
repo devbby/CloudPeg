@@ -465,8 +465,8 @@ export default defineComponent({
       <div class="col-7">
         <small class="text-muted ">QUEUE</small>
         
-          <div>
-            <div v-for="item in queue">
+          <div class="queue-container">
+            <div class="ms-1" v-for="item in queue">
               <div class="card mb-2">
                 <div class="card-content">
                   <div class="card-header">
@@ -562,6 +562,13 @@ export default defineComponent({
   .modal-content{
     width: 682px;
   }
+  
+  .queue-container {
+    max-height: 544px;
+    overflow: scroll;    
+  }
+  
+  
   #fs-container {   
   }
 </style>

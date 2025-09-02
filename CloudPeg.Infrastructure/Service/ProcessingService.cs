@@ -29,7 +29,7 @@ public class ProcessingService : IProcessingService
                     .Where(x => x.Status == ProcessingStatus.Enqueued)
                     .ToList();
                 
-                if(queue.Count(x => x.Status == ProcessingStatus.Processing) <2)
+                if(queue.Count(x => x.Status == ProcessingStatus.Processing) <1)
                     await ProcessItems(toProcess);    
                     
                 await _mediator.Send(new NotifyProcessingStatusCommand(_processingQueue.GetQueue()));
