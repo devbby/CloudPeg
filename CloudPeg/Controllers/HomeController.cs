@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using CloudPeg.Application.Command;
 using CloudPeg.Application.Service;
+using CloudPeg.Application.Utility;
 using CloudPeg.Domain.Model;
 using Microsoft.AspNetCore.Mvc;
 using CloudPeg.Models;
@@ -9,6 +10,7 @@ using FFMpegCore.Arguments;
 using FFMpegCore.Enums;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.StaticFiles;
+using Newtonsoft.Json;
 
 namespace CloudPeg.Controllers;
 
@@ -18,13 +20,16 @@ public class HomeController : Controller
     private readonly IFsService _fsService;
     private readonly IProcessingOptionsService _processingOptionsService;
     private readonly IProcessingQueue _processingQueueService;
+    private readonly ISupportedCodecService _supportedCodecService;
 
-    public HomeController(ILogger<HomeController> logger, IFsService fsService, IProcessingOptionsService processingOptionsService, IProcessingQueue processingQueueService)
+    public HomeController(ILogger<HomeController> logger, IFsService fsService, IProcessingOptionsService processingOptionsService,
+        IProcessingQueue processingQueueService, ISupportedCodecService  supportedCodecService)
     {
         _logger = logger;
         _fsService = fsService;
         _processingOptionsService = processingOptionsService;
         _processingQueueService = processingQueueService;
+        _supportedCodecService = supportedCodecService;
     }
     
     [HttpPost]
@@ -34,12 +39,15 @@ public class HomeController : Controller
         var parentDir = _fsService.GetParentDirectory(resource);
         var mediaInfo = await FFProbe.AnalyseAsync(resource.RealPath); 
         var processRequest = new ProcessingRequest(resource, 
-            command.Template, parentDir, mediaInfo, command.VideoStreams, command.AudioStreams, command.SubtitleStreams);
+            command.Template, parentDir, mediaInfo, command.VideoStreams, command.AudioStreams, command.SubtitleStreams,  command.IsSample);
          
         await _processingQueueService.EnqueueForProcessing(processRequest);
        
         
-        return Json(mediaInfo);
+        return Json(mediaInfo, new System.Text.Json.JsonSerializerOptions()
+        {
+            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals,
+        });
     }
 
     [HttpPost]
@@ -82,6 +90,16 @@ public class HomeController : Controller
             
         } 
         return Json(new { });
+    }
+
+    public async Task<IActionResult> GetSupportedCodecs()
+    {
+        var decoders = _supportedCodecService.GetSupportedDecoders();
+        var encoders = _supportedCodecService.GetSupportedEncoders();
+        return Json(new
+        { decoders,
+            encoders
+        });
     }
 
     public IActionResult Index()

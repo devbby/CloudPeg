@@ -8,6 +8,7 @@ import moment from "moment";
 
  
 export default defineComponent({
+  
    
   setup()  {
  
@@ -24,7 +25,9 @@ export default defineComponent({
     selectedQueueItem: QueueItem | undefined,
     templates: any,
     selectedTemplate: any,
+    isSample: boolean,
     modalProcessInfo: any,
+    supportedCodecs: any,
   }{
     return {
       request: "/fs",
@@ -33,14 +36,16 @@ export default defineComponent({
       selectedItem: undefined,
       queue: undefined,
       templates: undefined,
+      isSample: false,
       selectedTemplate: undefined,
       modalProcessInfo: undefined,
-      selectedQueueItem: undefined
+      selectedQueueItem: undefined,
+      supportedCodecs: undefined,
     }
   },
 
   async mounted(){
-
+    this.supportedCodecs = await this.getSupportedCodecs();
     this.templates = await this.getConversionTemplates();
     const connection = new HubConnectionBuilder()
         .withUrl("/VideoProcessor")
@@ -152,7 +157,8 @@ export default defineComponent({
         }
         
         
-        await this.processFile(this.selectedItem.file.path, this.selectedTemplate,videoStreams, audioStreams, subtitleStreams )
+        await this.processFile(this.selectedItem.file.path, this.selectedTemplate,videoStreams, 
+            audioStreams, subtitleStreams, this.isSample )
       }
     },
 
@@ -227,14 +233,15 @@ export default defineComponent({
           });
     },
    
-    async processFile(filePath: string, template: any,  videoStreams: number[], audioStreams: number[], subtitleStreams: number[]){
+    async processFile(filePath: string, template: any,  videoStreams: number[], audioStreams: number[], subtitleStreams: number[], isSample: boolean){
 
       let data ={
         filePath,
         template,
         videoStreams,
         audioStreams,
-        subtitleStreams
+        subtitleStreams,
+        isSample
       }
       return await fetch(`/Home/Process`,
           {
@@ -312,6 +319,31 @@ export default defineComponent({
                 value.audioStreams, 
                 value.subtitleStreams);
             return info;
+          }).catch(error => {
+            alert(error);
+            return undefined;
+          });
+    },
+    
+    async getSupportedCodecs(){
+       
+      return fetch(`/Home/GetSupportedCodecs`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'}
+          ).then(async (response) => {
+            if (response.ok) {
+              return response.json();
+            }
+            let errorBody = "";
+            await response.text().then(body => {
+              errorBody = body;
+            });
+            throw new Error(errorBody);
+          }).then(async value => {
+
+            return value;
           }).catch(error => {
             alert(error);
             return undefined;
@@ -509,7 +541,14 @@ export default defineComponent({
     <div class="row">
       <div class="col">
         <div v-if="selectedItem?.mediaInfo !== undefined && selectedItem?.mediaInfo !== null && selectedItem.file.type === 'file'">
-                
+
+          <div class="form-check">
+            <input v-model="isSample" class="form-check-input" type="checkbox" value="" id="checkSample">
+            <label class="form-check-label" for="checkSample">
+              Sample
+            </label>
+          </div>
+          
           <select class="me-3" v-model="selectedTemplate">
             <option v-for="template in templates" :value="template">{{template.name}}</option>
           </select>
@@ -520,7 +559,6 @@ export default defineComponent({
     </div>
     
   </div>
-  
    
   <div ref="modalProcessInfo" class="modal" tabindex="-1">
     <div class="modal-dialog" >
@@ -552,6 +590,7 @@ export default defineComponent({
   .queue-item-progress-container{
      flex-direction: row;
   }
+  
   .queue-item-progress-bar{
        flex: 1 1 auto;
   }
@@ -559,6 +598,7 @@ export default defineComponent({
   .processing-status{
     cursor: pointer;   
   }
+  
   .modal-content{
     width: 682px;
   }
@@ -567,7 +607,6 @@ export default defineComponent({
     max-height: 544px;
     overflow: scroll;    
   }
-  
   
   #fs-container {   
   }

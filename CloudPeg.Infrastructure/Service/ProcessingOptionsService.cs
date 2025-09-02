@@ -78,8 +78,7 @@ public class ProcessingOptionsService : IProcessingOptionsService
             },// hevc_vaapi    
             new() {
                 Name = "VAAPI HEVC 1080p",
-                EncoderVideoCodec = "hevc_vaapi",
-                Size = "1080p",
+                EncoderVideoCodec = "hevc_vaapi", 
                 UseHardwareAcceleration = true,
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<string>()

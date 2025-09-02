@@ -25,13 +25,15 @@ export class ProcessRequest{
 
     processingStarted: string;
     processingEnded: string;
+    isSample: boolean;
     
-    constructor(id: string, resource: any, progress: number, processingStarted: string, processingEnded: string) {
+    constructor(id: string, resource: any, progress: number, processingStarted: string, processingEnded: string, isSample: boolean) {
         this.id = id;
         this.resource = resource;
         this.progress = progress;
         this.processingStarted = processingStarted;
         this.processingEnded = processingEnded;
+        this.isSample = isSample;
     }
 }
 
