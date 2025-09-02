@@ -11,10 +11,10 @@ public class SupportedCodecService : ISupportedCodecService
     {
         var codecs = new List<string>(){"h264", "h265", "hevc", "av1", "vp9", "vaapi", "qsv"};
         Decoders = FfmpegCodecUtility.GetSupportedDecoders()
-            .Where(x=> codecs.Any(y=> x.Name.Contains(y) || x.IsAudio || x.IsSubtitle))
+            .Where(x=> x.IsAudio || x.IsSubtitle || codecs.Any(y=> x.Name.Contains(y)  )  ) 
             .Where(x=> FfmpegCodecUtility.IsCodecActuallySupported(x) ).ToList();
         Encoders = FfmpegCodecUtility.GetSupportedEncoders()
-            .Where(x=> codecs.Any(y=> x.Name.Contains(y) || x.IsAudio || x.IsSubtitle))
+            .Where(x=> x.IsAudio || x.IsSubtitle || codecs.Any(y=> x.Name.Contains(y)  ))
             .Where(x=> FfmpegCodecUtility.IsCodecActuallySupported(x) ).ToList();
         
     }

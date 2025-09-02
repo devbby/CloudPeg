@@ -115,6 +115,10 @@ public static class FfmpegCodecUtility
     
     public static bool IsCodecActuallySupported(Codec codec)
     {
+        #if DEBUG
+            Console.WriteLine( );
+            Console.Write($"Testing codec:{codec.Name}");
+        #endif
         string arguments = string.Empty;
         if (codec.IsVideo)
         {
@@ -150,6 +154,12 @@ public static class FfmpegCodecUtility
                 process.Start();
                 process.WaitForExit();
                 // A successful test will have an exit code of 0.
+                
+#if DEBUG
+                var result = process.ExitCode == 0 ? "PASS" : "FAIL";
+                Console.Write($"  ...{result}");
+#endif
+                
                 return process.ExitCode == 0;
             }
         }
