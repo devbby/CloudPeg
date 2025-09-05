@@ -11,7 +11,7 @@ public class ScaleVaapiCodecArgument : IScaleCodecArgument
     {
         Width = width;
         Height = height;
-        Argument = $"-vf hwupload,scale_vaapi=w={width}:h={height}:format=nv12";
+        Argument = $"-vf format=nv12|yuv420p,hwupload,scale_vaapi=w={width}:h={height}";
     }
 
    

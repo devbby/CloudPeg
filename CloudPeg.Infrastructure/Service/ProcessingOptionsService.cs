@@ -26,6 +26,9 @@ public class ProcessingOptionsService : IProcessingOptionsService
         
         return new List<ConversionTemplate>()
         {
+            
+            #region QSV
+            
             // hevc_qsv             HEVC (Intel Quick Sync Video acceleration) (codec hevc)
             new() {
                 Name = "QSV HEVC Original",
@@ -67,8 +70,11 @@ public class ProcessingOptionsService : IProcessingOptionsService
                     new GenericCodecArgument("-q:v 19")
                 }
             },
+            #endregion
             
-            // hevc_vaapi    
+            #region VAAPI
+             
+             
             new() {
                 Name = "VAAPI HEVC Original",
                 EncoderVideoCodec = "hevc_vaapi",
@@ -78,10 +84,15 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
-                    new GenericCodecArgument("-hwaccel_output_format vaapi"),
                     new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
+                    new GenericCodecArgument("-hwaccel_output_format vaapi")
+                },
+                HwEncoderArguments =  new List<ICodecArgument>()
+                { 
+                    new GenericCodecArgument("-rc_mode CQP "),
+                    new GenericCodecArgument("-qp 18"),
                 }
-            },// hevc_vaapi    
+            }, 
             new() {
                 Name = "VAAPI HEVC 1080p",
                 EncoderVideoCodec = "hevc_vaapi", 
@@ -90,17 +101,15 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
-                    new GenericCodecArgument("-hwaccel_output_format vaapi"),
                     new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                 },
                 HwEncoderArguments =  new List<ICodecArgument>()
                 { 
                     new ScaleVaapiCodecArgument(1920, 1080), 
-                    new GenericCodecArgument("-preset veryslow"),
-                    new GenericCodecArgument("-q:v 19"),
+                    new GenericCodecArgument("-rc_mode CQP "),
+                    new GenericCodecArgument("-qp 18"),
                 }
             },
-             // hevc_vaapi    
             new() {
                 Name = "Soft Decode + VAAPI HEVC 1080p",
                 EncoderVideoCodec = "hevc_vaapi", 
@@ -115,12 +124,12 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 { 
                     new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                     new ScaleVaapiCodecArgument(1920, 1080), 
-                    new GenericCodecArgument("-preset veryslow"),
-                    new GenericCodecArgument("-q:v 18"),
+                    new GenericCodecArgument("-rc_mode CQP "),
+                    new GenericCodecArgument("-qp 18"),
                 }
             },
             
-            // h264_vaapi           H.264/AVC (VAAPI) (codec h264)
+           
             new() {
                 Name = "VAAPI H264 Original",
                 EncoderVideoCodec = "h264_vaapi",
@@ -134,7 +143,6 @@ public class ProcessingOptionsService : IProcessingOptionsService
                     new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                 }
             },
-            
             new() {
                 Name = "VAAPI H264 1080p",
                 EncoderVideoCodec = "h264_vaapi",
@@ -152,7 +160,7 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 {
                     // "-vf hwmap=derive_device=vaapi,scale_vaapi=w=1920:h=1080,hwdownload,format=yuv420p",
                     // "-vf hwupload,scale_vaapi=w=1920:h=1080:format=nv12",
-                    new GenericCodecArgument("-vf hwupload,scale_vaapi=w=1920:h=1080:format=nv12"), 
+                    new ScaleVaapiCodecArgument(1920,1080), 
                     // "-vf 'hwupload'",
                     // "-vf scale=w=1920:h=1080"
                     // "-vf scale_vaapi=w=1920:h=1080",
@@ -182,7 +190,32 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 }
             },
             
+            #endregion
             
+            #region NVENC
+            new() {
+                Name = "NVENC HEVC 1080p HQ, software scaling",
+                EncoderVideoCodec = "hevc_nvenc", 
+                HwDevice = "CUDA",
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
+                HwDecoderArguments = new List<ICodecArgument>()
+                {
+                    // "-hwaccel_output_format cuda" // for scale_npp
+                },
+                
+                HwEncoderArguments = new List<ICodecArgument>()
+                {
+                    // "-vf scale_npp=width=1920:height=1080", // must be enabled in ffmpeg build
+                    new GenericCodecArgument("-vf scale=1920:1080"),
+                    new GenericCodecArgument("-preset p7"),
+                    new GenericCodecArgument("-rc:v constqp"), // constant quality
+                    new GenericCodecArgument("-qp 18"),
+                },
+            },
+            #endregion
+            
+            #region CPU
             new() {
                 Name = "CPU H264 Original",
                 EncoderVideoCodec = "h264",
@@ -206,34 +239,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 UseHardwareDecoding = true,
                 UseHardwareEncoding = true,
             },
+            #endregion
             
-            new() {
-                Name = "NVENC HEVC 1080p HQ, software scaling",
-                EncoderVideoCodec = "hevc_nvenc", 
-                HwDevice = "CUDA",
-                UseHardwareDecoding = true,
-                UseHardwareEncoding = true,
-                HwDecoderArguments = new List<ICodecArgument>()
-                {
-                    // "-hwaccel_output_format cuda" // for scale_npp
-                },
-                
-                HwEncoderArguments = new List<ICodecArgument>()
-                {
-                    // "-vf scale_npp=width=1920:height=1080", // must be enabled in ffmpeg build
-                    new GenericCodecArgument("-vf scale=1920:1080"),
-                    new GenericCodecArgument("-preset p7"),
-                    new GenericCodecArgument("-rc:v constqp"), // constant quality
-                    new GenericCodecArgument("-qp 18"),
-                },
-            },
-            // new(){
-            //     Name = "1080p H264 CPU",
-            //     Codec = "h264",
-            //     Size = "1080p",
-            //     UseHardwareAcceleration = false
-            // },
-
         };
     }
 }
