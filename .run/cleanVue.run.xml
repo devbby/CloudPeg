@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="cleanVue" type="js.build_tools.gulp">
-    <node-interpreter>project</node-interpreter>
+    <node-interpreter>/usr/bin/node</node-interpreter>
     <node-options />
     <gulpfile>$PROJECT_DIR$/CloudPeg/gulpfile.mjs</gulpfile>
     <tasks>
