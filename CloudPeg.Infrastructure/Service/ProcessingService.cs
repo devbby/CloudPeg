@@ -160,10 +160,11 @@ public class ProcessingService : IProcessingService
                         }
                 }
                 
-                
+                options.WithCustomArgument("-ac 2");
                 options
                     // .WithVideoCodec("hevc_vaapi")
                     .WithVideoCodec(template.EncoderVideoCodec)
+                    .WithAudioCodec("libopus")
                     .ForceFormat("matroska");          
                     // .WithVideoFilters(filter =>
                     // {

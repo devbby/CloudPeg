@@ -593,7 +593,7 @@ export default defineComponent({
                       <span class="me-3 ms-3">{{getElapsedSinceProcessingStart(item) }}</span>
                       
                       <span class="bi bi-clock-fill"></span>
-                      <span class="me-3">ETA {{getFormattedEta(item.processRequest.eta)}} %</span>
+                      <span class="me-3">ETA  {{getFormattedEta(item.processRequest.eta)}} </span>
                       
                       <span v-on:click="onProcessingCancelled(item)" v-if="item.status === 2" class="ms-3 link link-danger">Cancel</span>
                     </div>
