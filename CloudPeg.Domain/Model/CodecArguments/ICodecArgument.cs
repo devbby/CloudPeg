@@ -21,4 +21,5 @@ public interface IScaleCodecArgument : ICodecArgument
     public int Width { get; set; }
 
     public int Height { get; set; }
+    string GetScalelessArgument();
 }

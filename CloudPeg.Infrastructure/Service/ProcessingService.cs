@@ -153,6 +153,7 @@ public class ProcessingService : IProcessingService
                                    item.ProcessRequest.MediaInfo?.PrimaryVideoStream.Width == scaleArg.Width)
                                 {
                                     Console.WriteLine("Skipping scale filter, original and target size match!");
+                                    //options.WithCustomArgument(scaleArg.GetScalelessArgument());
                                     continue;
                                 }
                             }

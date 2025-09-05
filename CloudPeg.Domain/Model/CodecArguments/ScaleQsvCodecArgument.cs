@@ -6,11 +6,17 @@ public class ScaleQsvCodecArgument : IScaleCodecArgument
     {
         Width = width;
         Height = height;
-        Argument = $"-vf hwupload,scale_qsv=w={width}:h={height}:format=nv12";
+        Argument = $"-vf hwupload,scale_qsv=w={width}:h={height},format=nv12";
     }
 
     public int Width { get; set; }
     public int Height { get; set; }
+    public string GetScalelessArgument()
+    {
+        return   $"-vf hwupload,format=nv12";
+         
+    }
+
     public string Type { get; set; } = "scale_qsv";
     public string Argument { get; set; }
 }
