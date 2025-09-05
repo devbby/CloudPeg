@@ -81,7 +81,7 @@ public class ProcessingService : IProcessingService
             var sampleProcessor = FFMpegArguments
                 .FromFileInput(inputPath, true, options =>
                 {
-                    options.WithCustomArgument("-ss 00:15:00");
+                    options.WithCustomArgument("-ss 00:05:50");
                     options.WithCustomArgument("-t 00:05:00");
 
                 })
@@ -120,7 +120,7 @@ public class ProcessingService : IProcessingService
                     {
                         foreach (var argument in template.HwDecoderArguments)
                         {
-                            options.WithCustomArgument(argument);
+                            options.WithCustomArgument(argument.Argument);
                         }
                     }
                     // options.WithCustomArgument("-hwaccel_output_format vaapi");
@@ -133,7 +133,7 @@ public class ProcessingService : IProcessingService
                 {
                     foreach (var argument in template.DecoderArguments)
                     {
-                        options.WithCustomArgument(argument);
+                        options.WithCustomArgument(argument.Argument);
                     }
                 }
                 
@@ -146,7 +146,16 @@ public class ProcessingService : IProcessingService
                     if(template.HwEncoderArguments != null)
                         foreach (var argument in template.HwEncoderArguments)
                         {
-                            options.WithCustomArgument(argument);
+                            if (argument is IScaleCodecArgument scaleArg)
+                            {
+                                if(item.ProcessRequest.MediaInfo?.PrimaryVideoStream.Height == scaleArg.Height && 
+                                   item.ProcessRequest.MediaInfo?.PrimaryVideoStream.Width == scaleArg.Width)
+                                {
+                                    Console.WriteLine("Skipping scale filter, original and target size match!");
+                                    continue;
+                                }
+                            }
+                            options.WithCustomArgument(argument.Argument);
                         }
                 }
                 

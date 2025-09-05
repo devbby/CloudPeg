@@ -3,6 +3,7 @@ using CloudPeg.Application.Command;
 using CloudPeg.Application.Service;
 using CloudPeg.Application.Utility;
 using CloudPeg.Domain.Model;
+using CloudPeg.Helper;
 using Microsoft.AspNetCore.Mvc;
 using CloudPeg.Models;
 using FFMpegCore;
@@ -124,4 +125,15 @@ public class HomeController : Controller
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+    
+    public IActionResult GetVersion()
+    {
+        return Json(new
+        {
+            Version = VersionHelper.GetVersion()
+        });
+    }
+
+    
+    
 }

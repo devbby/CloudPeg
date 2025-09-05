@@ -1,5 +1,6 @@
 using CloudPeg.Application.Service;
 using CloudPeg.Domain.Model;
+using CloudPeg.Domain.Model.CodecArguments;
 
 namespace CloudPeg.Infrastructure.Service;
 
@@ -51,15 +52,16 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Size = "1080p",
                 UseHardwareAcceleration = true,
                 HwDevice = "QSV",
-                HwDecoderArguments = new List<string>()
+                HwDecoderArguments = new List<ICodecArgument>()
                 { 
-                    "-hwaccel_device /dev/dri/renderD128",
+                    new GenericCodecArgument("-hwaccel_device /dev/dri/renderD128")
+                    ,
                 },
-                HwEncoderArguments =  new List<string>()
+                HwEncoderArguments =  new List<ICodecArgument>()
                 { 
-                    "-vf hwupload,scale_qsv=w=1920:h=1080:format=nv12", 
-                    "-quality veryslow",
-                    "-q:v 19"
+                    new ScaleQsvCodecArgument(1920, 1080), 
+                    new GenericCodecArgument("-quality veryslow"),
+                    new GenericCodecArgument("-q:v 19")
                 }
             },
             
@@ -70,10 +72,10 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Size = "1080p",
                 UseHardwareAcceleration = true,
                 HwDevice = "VAAPI",
-                HwDecoderArguments = new List<string>()
+                HwDecoderArguments = new List<ICodecArgument>()
                 {
-                    "-hwaccel_output_format vaapi",
-                    "-vaapi_device /dev/dri/renderD128"
+                    new GenericCodecArgument("-hwaccel_output_format vaapi"),
+                    new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                 }
             },// hevc_vaapi    
             new() {
@@ -81,16 +83,16 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 EncoderVideoCodec = "hevc_vaapi", 
                 UseHardwareAcceleration = true,
                 HwDevice = "VAAPI",
-                HwDecoderArguments = new List<string>()
+                HwDecoderArguments = new List<ICodecArgument>()
                 {
-                    "-hwaccel_output_format vaapi",
-                    "-vaapi_device /dev/dri/renderD128"
+                    new GenericCodecArgument("-hwaccel_output_format vaapi"),
+                    new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                 },
-                HwEncoderArguments =  new List<string>()
+                HwEncoderArguments =  new List<ICodecArgument>()
                 { 
-                    "-vf hwupload,scale_vaapi=w=1920:h=1080:format=nv12", 
-                    "-preset veryslow",
-                    "-q:v 19"
+                    new ScaleVaapiCodecArgument(1920, 1080), 
+                    new GenericCodecArgument("-preset veryslow"),
+                    new GenericCodecArgument("-q:v 19"),
                 }
             },
             
@@ -101,10 +103,10 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Size = "1080p",
                 UseHardwareAcceleration = true,
                 HwDevice = "VAAPI",
-                HwDecoderArguments = new List<string>()
+                HwDecoderArguments = new List<ICodecArgument>()
                 {
-                    "-hwaccel_output_format vaapi",
-                    "-vaapi_device /dev/dri/renderD128"
+                    new GenericCodecArgument("-hwaccel_output_format vaapi"),
+                    new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                 }
             },
             
@@ -114,24 +116,24 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Size = "1080p",
                 UseHardwareAcceleration = true,
                 HwDevice = "VAAPI",
-                HwDecoderArguments = new List<string>()
+                HwDecoderArguments = new List<ICodecArgument>()
                 {
                     // "-hwaccel_output_format vaapi",
                     // "-hwaccel vaapi",
-                    "-vaapi_device /dev/dri/renderD128",
+                    new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
                 },
-                HwEncoderArguments =  new List<string>()
+                HwEncoderArguments =  new List<ICodecArgument>()
                 {
                     // "-vf hwmap=derive_device=vaapi,scale_vaapi=w=1920:h=1080,hwdownload,format=yuv420p",
                     // "-vf hwupload,scale_vaapi=w=1920:h=1080:format=nv12",
-                    "-vf hwupload,scale_vaapi=w=1920:h=1080:format=nv12",
+                    new GenericCodecArgument("-vf hwupload,scale_vaapi=w=1920:h=1080:format=nv12"), 
                     // "-vf 'hwupload'",
                     // "-vf scale=w=1920:h=1080"
                     // "-vf scale_vaapi=w=1920:h=1080",
                     // "-vf hwdownload",
                     // "-vf format=yuv420p",
-                    "-preset slow",
-                    "-q:v 18"
+                    new GenericCodecArgument("-preset slow"),
+                    new GenericCodecArgument("-q:v 18"),
                 }
                 
             },
@@ -165,18 +167,18 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 HwDevice = "CUDA",
                 UseHardwareAcceleration = true,
                 
-                HwDecoderArguments = new List<string>()
+                HwDecoderArguments = new List<ICodecArgument>()
                 {
                     // "-hwaccel_output_format cuda" // for scale_npp
                 },
                 
-                HwEncoderArguments = new List<string>()
+                HwEncoderArguments = new List<ICodecArgument>()
                 {
                     // "-vf scale_npp=width=1920:height=1080", // must be enabled in ffmpeg build
-                    "-vf scale=1920:1080",
-                    "-preset p7",
-                    "-rc:v constqp", // constant quality
-                    "-qp 18"
+                    new GenericCodecArgument("-vf scale=1920:1080"),
+                    new GenericCodecArgument("-preset p7"),
+                    new GenericCodecArgument("-rc:v constqp"), // constant quality
+                    new GenericCodecArgument("-qp 18"),
                 },
             },
             // new(){

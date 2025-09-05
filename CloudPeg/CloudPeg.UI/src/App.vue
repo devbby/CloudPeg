@@ -28,6 +28,7 @@ export default defineComponent({
     isSample: boolean,
     modalProcessInfo: any,
     supportedCodecs: any,
+    version: any
   }{
     return {
       request: "/fs",
@@ -41,10 +42,12 @@ export default defineComponent({
       modalProcessInfo: undefined,
       selectedQueueItem: undefined,
       supportedCodecs: undefined,
+      version: undefined
     }
   },
 
   async mounted(){
+    this.version = await this.getVersion();
     this.supportedCodecs = await this.getSupportedCodecs();
     this.templates = await this.getConversionTemplates();
     const connection = new HubConnectionBuilder()
@@ -350,6 +353,31 @@ export default defineComponent({
           });
     },
 
+    async getVersion(){
+
+      return fetch(`/Home/GetVersion`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'}
+      ).then(async (response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        let errorBody = "";
+        await response.text().then(body => {
+          errorBody = body;
+        });
+        throw new Error(errorBody);
+      }).then(async value => {
+
+        return value;
+      }).catch(error => {
+        alert(error);
+        return undefined;
+      });
+    },
+
     getFormattedDateTime(date: string){
       
       // return moment(date).format("DD/MM/YYYY HH:mm:ss")
@@ -375,18 +403,40 @@ export default defineComponent({
 </script>
 
 <template>
-  <h2 class="p-3">
-    <span class="bi bi-cloud"></span>
-    CloudPeg
-  </h2>
   
-  <div id="fs-container mb-3">
-    <vue-finder
-        id='my_vuefinder' v-on:select="onResourceSelected" :url="request" :request="request" theme="dark" :select-button="handleSelectButton"
-    />
-  </div>
   
   <div class="container-fluid">
+
+    <div class="row mb-3">
+
+      <div class="col">
+
+        <h2 class="ps-3 pt-3 mb-0">
+          <span class="bi bi-cloud"></span>
+          CloudPeg
+        </h2>
+        <small class="pb-3 ps-3 text-muted mb-3  text-uppercase" style="font-size: 0.8rem">
+          {{version.version}}
+        </small>
+
+      </div>
+
+    </div>
+    
+    <div class="row">
+      
+      <div class="col">
+
+        <div id="fs-container mb-3">
+          <vue-finder
+              id='my_vuefinder' v-on:select="onResourceSelected" :url="request" :request="request" theme="dark" :select-button="handleSelectButton"
+          />
+        </div>
+        
+      </div>
+      
+    </div>
+    
     <div class="row">
       <div class="col-5">
         <small class="text-muted text-uppercase">Target File</small>
