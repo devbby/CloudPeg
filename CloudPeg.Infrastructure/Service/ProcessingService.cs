@@ -1,5 +1,6 @@
 using CloudPeg.Application.Command;
 using CloudPeg.Application.Service;
+using CloudPeg.Application.Utility;
 using CloudPeg.Domain.Model;
 using FFMpegCore;
 using FFMpegCore.Arguments;
@@ -111,7 +112,7 @@ public class ProcessingService : IProcessingService
                 
                 // options.WithVideoCodec(item.ProcessRequest.MediaInfo.PrimaryVideoStream.CodecName);
                 
-                if (template.UseHardwareAcceleration)
+                if (template.UseHardwareDecoding)
                 {
                     options.WithHardwareAcceleration(
                         Enum.Parse<HardwareAccelerationDevice>(template.HwDevice));
@@ -141,7 +142,7 @@ public class ProcessingService : IProcessingService
             .OutputToFile(Path.Join(item.ProcessRequest.ParentDir, outputName),true, options =>
             {
                 
-                if (template.UseHardwareAcceleration)
+                if (template.UseHardwareEncoding)
                 {
                     if(template.HwEncoderArguments != null)
                         foreach (var argument in template.HwEncoderArguments)
@@ -202,8 +203,13 @@ public class ProcessingService : IProcessingService
                 {
                     item.ProcessRequest.ProcessingStarted = DateTime.Now;
                 }
-                
+
+                var passed = DateTime.Now - item.ProcessRequest.ProcessingStarted;
                 item.ProcessRequest.Progress = percentage;
+                var eta = EtaUtility.EstimateRemainingTime(percentage, passed);
+                item.ProcessRequest.Eta =
+                    $"{eta.Hours:00}:{eta.Minutes:00}:{eta.Seconds:00} ";
+                
                 // Console.WriteLine($"Progress: {percentage}%");
                 if (percentage >= 100)
                 {

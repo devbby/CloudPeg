@@ -51,4 +51,5 @@ public class ProcessingRequest
 
     public DateTime ProcessingStarted { get; set; }
     public DateTime ProcessingEnded { get; set; }
+    public string Eta { get; set; }
 }

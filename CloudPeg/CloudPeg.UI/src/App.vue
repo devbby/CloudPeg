@@ -235,7 +235,15 @@ export default defineComponent({
             alert(error);
           });
     },
-   
+    
+    async unselectAllSubStreams(){
+ 
+      for (const element of $("input.sub-toggle:checked")) {
+        $(element).prop("checked", false);
+      }
+      
+    },
+       
     async processFile(filePath: string, template: any,  videoStreams: number[], audioStreams: number[], subtitleStreams: number[], isSample: boolean){
 
       let data ={
@@ -396,7 +404,22 @@ export default defineComponent({
       
     },
 
-    
+    getFormattedEta(eta: string){
+      return eta;
+      // const duration = moment.duration(eta, 'milliseconds');
+      // return `${duration.hours()}:${duration.minutes()}:${duration.seconds()}` 
+    },
+
+    getElapsedProcessing(request : any){
+      let duration = moment.duration(moment(request.processingEnded).diff(request.processingStarted));
+
+      return `${this.pad(duration.hours(), 2) }:${this.pad(duration.minutes(), 2)}:${this.pad(duration.seconds(), 2)}`
+    },
+
+      pad(num: number, size: number) {
+        let s = "000000000" + num;
+        return s.substr(s.length-size);
+      }
   }
 });
  
@@ -522,7 +545,8 @@ export default defineComponent({
                         <span><small class="text-muted">LANGUAGE</small> {{ selectedItem?.mediaInfo?.getPrimarySubtitleLanguage() }}   </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">SUBTITLE STREAMS</small> {{ selectedItem?.mediaInfo?.getMediaInfoSubStreamCount() }} </span>
+                        <span><small class="text-muted mb-2">SUBTITLE STREAMS</small> {{ selectedItem?.mediaInfo?.getMediaInfoSubStreamCount() }} </span> 
+                        <span class="ms-3 link link-primary" v-on:click="unselectAllSubStreams">Select none</span>
                         <div>
                           <template v-for="sub in selectedItem?.mediaInfo?.subtitleStreams" >
                             <input type="checkbox" class="sub-toggle btn-check" :index="sub.index" :id="'btn-sub-check-'+sub.index" checked :value="sub" autocomplete="off">
@@ -565,13 +589,24 @@ export default defineComponent({
                       <div  class="progress queue-item-progress-bar" role="progressbar" aria-label="Animated striped example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
                         <div class="progress-bar progress-bar-striped progress-bar-animated " :style="{'width': item.processRequest.progress+'%'}"></div>
                       </div>
+                      <span class="bi bi-hourglass-split ms-3"></span>
                       <span class="me-3 ms-3">{{getElapsedSinceProcessingStart(item) }}</span>
+                      
+                      <span class="bi bi-clock-fill"></span>
+                      <span class="me-3">ETA {{getFormattedEta(item.processRequest.eta)}} %</span>
+                      
                       <span v-on:click="onProcessingCancelled(item)" v-if="item.status === 2" class="ms-3 link link-danger">Cancel</span>
                     </div>
                     <div v-if="item.status === 1" class="d-flex">
                       <span v-on:click="onRemoveEnqueued(item)" class="ms-3 link link-danger">
                         <span class="bi bi-trash-fill me-1"></span> Remove
                       </span>
+                    </div>
+
+                    <div v-if="item.status === 3 || item.status === 4" class="d-flex">
+                      <span class="bi bi-watch me-2 ms-3"></span>
+                      <span class=" ms-2 ">Elapsed </span>
+                      <span class="ms-3 me-3">{{getElapsedProcessing(item.processRequest)}} </span>
                     </div>
 
                   </div>

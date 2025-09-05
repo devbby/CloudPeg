@@ -31,7 +31,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Name = "QSV HEVC Original",
                 EncoderVideoCodec = "hevc_qsv",
                 Size = "1080p",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "QSV"
             },
             
@@ -41,7 +42,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Name = "QSV H264 Original",
                 EncoderVideoCodec = "h264_qsv",
                 Size = "1080p",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "QSV"
             },
             // h264_qsv             H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 (Intel Quick Sync Video acceleration) (codec h264)
@@ -50,7 +52,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Name = "QSV H264 1080p",
                 EncoderVideoCodec = "h264_qsv",
                 Size = "1080p",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "QSV",
                 HwDecoderArguments = new List<ICodecArgument>()
                 { 
@@ -70,7 +73,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Name = "VAAPI HEVC Original",
                 EncoderVideoCodec = "hevc_vaapi",
                 Size = "1080p",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
@@ -81,7 +85,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
             new() {
                 Name = "VAAPI HEVC 1080p",
                 EncoderVideoCodec = "hevc_vaapi", 
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
@@ -95,13 +100,33 @@ public class ProcessingOptionsService : IProcessingOptionsService
                     new GenericCodecArgument("-q:v 19"),
                 }
             },
+             // hevc_vaapi    
+            new() {
+                Name = "Soft Decode + VAAPI HEVC 1080p",
+                EncoderVideoCodec = "hevc_vaapi", 
+                UseHardwareDecoding = false,
+                UseHardwareEncoding = true,
+                HwDevice = "VAAPI",
+                HwDecoderArguments = new List<ICodecArgument>()
+                {
+                   
+                },
+                HwEncoderArguments =  new List<ICodecArgument>()
+                { 
+                    new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
+                    new ScaleVaapiCodecArgument(1920, 1080), 
+                    new GenericCodecArgument("-preset veryslow"),
+                    new GenericCodecArgument("-q:v 18"),
+                }
+            },
             
             // h264_vaapi           H.264/AVC (VAAPI) (codec h264)
             new() {
                 Name = "VAAPI H264 Original",
                 EncoderVideoCodec = "h264_vaapi",
                 Size = "1080p",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
@@ -114,7 +139,8 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 Name = "VAAPI H264 1080p",
                 EncoderVideoCodec = "h264_vaapi",
                 Size = "1080p",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDevice = "VAAPI",
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
@@ -137,36 +163,56 @@ public class ProcessingOptionsService : IProcessingOptionsService
                 }
                 
             },
-            
+            new() {
+                Name = "Soft Decode + VAAPI H264 1080p",
+                EncoderVideoCodec = "h264_vaapi", 
+                UseHardwareDecoding = false,
+                UseHardwareEncoding = true,
+                HwDevice = "VAAPI",
+                HwDecoderArguments = new List<ICodecArgument>()
+                {
+                   
+                },
+                HwEncoderArguments =  new List<ICodecArgument>()
+                { 
+                    new GenericCodecArgument("-vaapi_device /dev/dri/renderD128"),
+                    new ScaleVaapiCodecArgument(1920, 1080),
+                    new GenericCodecArgument("-preset slow"),
+                    new GenericCodecArgument("-q:v 18"),
+                }
+            },
             
             
             new() {
                 Name = "CPU H264 Original",
                 EncoderVideoCodec = "h264",
                 Size = "1080p",
-                UseHardwareAcceleration = false,
+                UseHardwareDecoding = false,
+                UseHardwareEncoding = false,
             },
             
             new() {
                 Name = "CPU HEVC Original",
                 EncoderVideoCodec = "hevc",
                 Size = "1080p",
-                UseHardwareAcceleration = false,
+                UseHardwareDecoding = false,
+                UseHardwareEncoding = false,
             },
             
             new() {
                 Name = "NVENC HEVC Defaults",
                 EncoderVideoCodec = "hevc_nvenc", 
                 HwDevice = "CUDA",
-                UseHardwareAcceleration = true,
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
             },
             
             new() {
                 Name = "NVENC HEVC 1080p HQ, software scaling",
                 EncoderVideoCodec = "hevc_nvenc", 
                 HwDevice = "CUDA",
-                UseHardwareAcceleration = true,
-                
+                UseHardwareDecoding = true,
+                UseHardwareEncoding = true,
                 HwDecoderArguments = new List<ICodecArgument>()
                 {
                     // "-hwaccel_output_format cuda" // for scale_npp

@@ -42,7 +42,8 @@ public class ProcessingQueue : IProcessingQueue
         if (item is { ProcessRequest.CancellationTokenSource: not null })
         {
             await item.ProcessRequest.CancellationTokenSource.CancelAsync();
-            item.Status = ProcessingStatus.Failed;    
+            item.Status = ProcessingStatus.Failed; 
+            item.ProcessRequest.ProcessingEnded = DateTime.Now;
         }
     }
 }

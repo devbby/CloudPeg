@@ -18,7 +18,7 @@ export class ProcessRequest{
     id: string;
     
     progress: number;
-    
+    eta: string;
     resource: {
         basename: string;
     }
@@ -27,13 +27,14 @@ export class ProcessRequest{
     processingEnded: string;
     isSample: boolean;
     
-    constructor(id: string, resource: any, progress: number, processingStarted: string, processingEnded: string, isSample: boolean) {
+    constructor(id: string, resource: any, progress: number, processingStarted: string, processingEnded: string, isSample: boolean, eta: string) {
         this.id = id;
         this.resource = resource;
         this.progress = progress;
         this.processingStarted = processingStarted;
         this.processingEnded = processingEnded;
         this.isSample = isSample;
+        this.eta = eta;
     }
 }
 

@@ -8,7 +8,8 @@ public class ConversionTemplate
     public string Name { get; set; }
     public string EncoderVideoCodec { get; set; }
     public string Size { get; set; }
-    public bool UseHardwareAcceleration { get; set; }
+    public bool UseHardwareDecoding { get; set; }
+    public bool UseHardwareEncoding { get; set; }
     public string HwDevice { get; set; }
     
     public List<ICodecArgument> HwDecoderArguments { get; set; }
