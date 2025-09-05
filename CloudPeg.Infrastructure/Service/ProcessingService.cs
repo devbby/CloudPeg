@@ -206,7 +206,7 @@ public class ProcessingService : IProcessingService
 
                 var passed = DateTime.Now - item.ProcessRequest.ProcessingStarted;
                 item.ProcessRequest.Progress = percentage;
-                var eta = EtaUtility.EstimateRemainingTime(percentage, passed);
+                var eta = CloudPeg.Application.Utility.EtaUtility.EstimateRemainingTime(percentage, passed);
                 item.ProcessRequest.Eta =
                     $"{eta.Hours:00}:{eta.Minutes:00}:{eta.Seconds:00} ";
                 
