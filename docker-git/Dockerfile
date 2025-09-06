@@ -51,7 +51,6 @@ RUN dnf update -y && \
     dnf install -y \
     wget \
     gnupg2 \
-    ffmpeg && \
     dnf clean all
 
 # To install Intel Media VA Driver, you'll need to enable the RPM Fusion non-free repository.
@@ -68,7 +67,9 @@ RUN dnf install -y \
 RUN rpm -Uvh https://packages.microsoft.com/config/fedora/39/packages-microsoft-prod.rpm && \
     dnf install -y \
     dotnet-sdk-9.0 && \
-    dnf clean all
+    dnf clean all 
+
+RUN dnf swap -y ffmpeg-free ffmpeg --allowerasing
 
 EXPOSE 5000
 
