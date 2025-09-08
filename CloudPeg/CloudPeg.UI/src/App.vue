@@ -8,6 +8,7 @@ import moment from "moment";
 
  
 export default defineComponent({
+  
    
   setup()  {
  
@@ -24,7 +25,10 @@ export default defineComponent({
     selectedQueueItem: QueueItem | undefined,
     templates: any,
     selectedTemplate: any,
+    isSample: boolean,
     modalProcessInfo: any,
+    supportedCodecs: any,
+    version: any
   }{
     return {
       request: "/fs",
@@ -33,14 +37,18 @@ export default defineComponent({
       selectedItem: undefined,
       queue: undefined,
       templates: undefined,
+      isSample: false,
       selectedTemplate: undefined,
       modalProcessInfo: undefined,
-      selectedQueueItem: undefined
+      selectedQueueItem: undefined,
+      supportedCodecs: undefined,
+      version: undefined
     }
   },
 
   async mounted(){
-
+    this.version = await this.getVersion();
+    this.supportedCodecs = await this.getSupportedCodecs();
     this.templates = await this.getConversionTemplates();
     const connection = new HubConnectionBuilder()
         .withUrl("/VideoProcessor")
@@ -152,7 +160,8 @@ export default defineComponent({
         }
         
         
-        await this.processFile(this.selectedItem.file.path, this.selectedTemplate,videoStreams, audioStreams, subtitleStreams )
+        await this.processFile(this.selectedItem.file.path, this.selectedTemplate,videoStreams, 
+            audioStreams, subtitleStreams, this.isSample )
       }
     },
 
@@ -226,15 +235,24 @@ export default defineComponent({
             alert(error);
           });
     },
-   
-    async processFile(filePath: string, template: any,  videoStreams: number[], audioStreams: number[], subtitleStreams: number[]){
+    
+    async unselectAllSubStreams(){
+ 
+      for (const element of $("input.sub-toggle:checked")) {
+        $(element).prop("checked", false);
+      }
+      
+    },
+       
+    async processFile(filePath: string, template: any,  videoStreams: number[], audioStreams: number[], subtitleStreams: number[], isSample: boolean){
 
       let data ={
         filePath,
         template,
         videoStreams,
         audioStreams,
-        subtitleStreams
+        subtitleStreams,
+        isSample
       }
       return await fetch(`/Home/Process`,
           {
@@ -317,6 +335,56 @@ export default defineComponent({
             return undefined;
           });
     },
+    
+    async getSupportedCodecs(){
+       
+      return fetch(`/Home/GetSupportedCodecs`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'}
+          ).then(async (response) => {
+            if (response.ok) {
+              return response.json();
+            }
+            let errorBody = "";
+            await response.text().then(body => {
+              errorBody = body;
+            });
+            throw new Error(errorBody);
+          }).then(async value => {
+
+            return value;
+          }).catch(error => {
+            alert(error);
+            return undefined;
+          });
+    },
+
+    async getVersion(){
+
+      return fetch(`/Home/GetVersion`,
+          {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'}
+      ).then(async (response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        let errorBody = "";
+        await response.text().then(body => {
+          errorBody = body;
+        });
+        throw new Error(errorBody);
+      }).then(async value => {
+
+        return value;
+      }).catch(error => {
+        alert(error);
+        return undefined;
+      });
+    },
 
     getFormattedDateTime(date: string){
       
@@ -336,25 +404,62 @@ export default defineComponent({
       
     },
 
-    
+    getFormattedEta(eta: string){
+      return eta;
+      // const duration = moment.duration(eta, 'milliseconds');
+      // return `${duration.hours()}:${duration.minutes()}:${duration.seconds()}` 
+    },
+
+    getElapsedProcessing(request : any){
+      let duration = moment.duration(moment(request.processingEnded).diff(request.processingStarted));
+
+      return `${this.pad(duration.hours(), 2) }:${this.pad(duration.minutes(), 2)}:${this.pad(duration.seconds(), 2)}`
+    },
+
+      pad(num: number, size: number) {
+        let s = "000000000" + num;
+        return s.substr(s.length-size);
+      }
   }
 });
  
 </script>
 
 <template>
-  <h2 class="p-3">
-    <span class="bi bi-cloud"></span>
-    CloudPeg
-  </h2>
   
-  <div id="fs-container mb-3">
-    <vue-finder
-        id='my_vuefinder' v-on:select="onResourceSelected" :url="request" :request="request" theme="dark" :select-button="handleSelectButton"
-    />
-  </div>
   
   <div class="container-fluid">
+
+    <div class="row mb-3">
+
+      <div class="col">
+
+        <h2 class="ps-3 pt-3 mb-0">
+          <span class="bi bi-cloud"></span>
+          CloudPeg
+        </h2>
+        <small class="pb-3 ps-3 text-muted mb-3  text-uppercase" style="font-size: 0.8rem">
+          {{version.version}}
+        </small>
+
+      </div>
+
+    </div>
+    
+    <div class="row">
+      
+      <div class="col">
+
+        <div id="fs-container mb-3">
+          <vue-finder
+              id='my_vuefinder' v-on:select="onResourceSelected" :url="request" :request="request" theme="dark" :select-button="handleSelectButton"
+          />
+        </div>
+        
+      </div>
+      
+    </div>
+    
     <div class="row">
       <div class="col-5">
         <small class="text-muted text-uppercase">Target File</small>
@@ -380,22 +485,22 @@ export default defineComponent({
                     <span class="bi bi-film me-2"></span> Video stream
                     <div class="ms-4">
                       <div >
-                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].codecName}} </span>
+                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.codecName}} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">FPS</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].frameRate}} </span>
+                        <span><small class="text-muted">FPS</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.frameRate }} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">SIZE</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].width}}x{{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].height}} </span>
+                        <span><small class="text-muted">SIZE</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.width}}x{{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.height}} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">LANGUAGE</small> {{ selectedItem?.mediaInfo.videoStreams[selectedItem?.mediaInfo.primaryVideoIndex].language}} </span>
+                        <span><small class="text-muted">LANGUAGE</small> {{ selectedItem?.mediaInfo?.getPrimaryVideoStream()?.language}} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">VIDEO STREAMS</small> {{ selectedItem?.mediaInfo.videoStreams.length}} </span>
+                        <span><small class="text-muted">VIDEO STREAMS</small> {{ selectedItem?.mediaInfo?.videoStreams?.length}} </span>
                       
                         <div>
-                          <template v-for="video in selectedItem?.mediaInfo.videoStreams" >
+                          <template v-for="video in selectedItem?.mediaInfo?.videoStreams" >
                             <input type="checkbox" class="video-toggle btn-check" :index="video.index" :id="'btn-video-check-'+video.index" checked :value="video" autocomplete="off">
                             <label class="btn btn-sm ms-1" :for="'btn-video-check-'+video.index">
                               <span class=" bi bi-film me-2"></span>
@@ -411,15 +516,15 @@ export default defineComponent({
                     <span class="bi bi-headphones me-2"></span> Audio stream
                     <div class="ms-4">
                       <div>
-                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo.audioStreams[0].codecName  }} </span>
+                        <span><small class="text-muted">CODEC</small> {{ selectedItem?.mediaInfo?.getPrimaryAudioStream()?.codecName  }} </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">CHANNELS</small> {{ selectedItem?.mediaInfo.audioStreams[0].channels }}  {{ selectedItem?.mediaInfo.audioStreams[0].channelLayout }}</span>
+                        <span><small class="text-muted">CHANNELS</small> {{ selectedItem?.mediaInfo?.getPrimaryAudioStream()?.channels }}  {{ selectedItem?.mediaInfo?.getPrimaryAudioStream()?.channelLayout }}</span>
                       </div>
                       <div>
-                        <span><small class="text-muted">AUDIO STREAMS</small> {{ selectedItem?.mediaInfo.audioStreams.length}} </span>
+                        <span><small class="text-muted">AUDIO STREAMS</small> {{ selectedItem?.mediaInfo?.audioStreams?.length}} </span>
                         <div>
-                          <template v-for="audio in selectedItem?.mediaInfo.audioStreams" >
+                          <template v-for="audio in selectedItem?.mediaInfo?.audioStreams" >
                             <input type="checkbox" class=" audio-toggle btn-check" :index="audio.index"  :id="'btn-audio-check-'+audio.index" checked :value="audio" autocomplete="off">
                             <label class="btn btn-sm ms-1" :for="'btn-audio-check-'+audio.index">
                               <span class=" bi bi-headphones me-2 "></span>
@@ -440,9 +545,10 @@ export default defineComponent({
                         <span><small class="text-muted">LANGUAGE</small> {{ selectedItem?.mediaInfo?.getPrimarySubtitleLanguage() }}   </span>
                       </div>
                       <div>
-                        <span><small class="text-muted">SUBTITLE STREAMS</small> {{ selectedItem?.mediaInfo?.getMediaInfoSubStreamCount() }} </span>
+                        <span><small class="text-muted mb-2">SUBTITLE STREAMS</small> {{ selectedItem?.mediaInfo?.getMediaInfoSubStreamCount() }} </span> 
+                        <span class="ms-3 link link-primary" v-on:click="unselectAllSubStreams">Select none</span>
                         <div>
-                          <template v-for="sub in selectedItem?.mediaInfo.subtitleStreams" >
+                          <template v-for="sub in selectedItem?.mediaInfo?.subtitleStreams" >
                             <input type="checkbox" class="sub-toggle btn-check" :index="sub.index" :id="'btn-sub-check-'+sub.index" checked :value="sub" autocomplete="off">
                             <label class="btn btn-sm ms-1" :for="'btn-sub-check-'+sub.index">
                               <span class=" bi bi-badge-cc-fill me-2"></span>
@@ -465,8 +571,8 @@ export default defineComponent({
       <div class="col-7">
         <small class="text-muted ">QUEUE</small>
         
-          <div>
-            <div v-for="item in queue">
+          <div class="queue-container">
+            <div class="ms-1" v-for="item in queue">
               <div class="card mb-2">
                 <div class="card-content">
                   <div class="card-header">
@@ -483,13 +589,24 @@ export default defineComponent({
                       <div  class="progress queue-item-progress-bar" role="progressbar" aria-label="Animated striped example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
                         <div class="progress-bar progress-bar-striped progress-bar-animated " :style="{'width': item.processRequest.progress+'%'}"></div>
                       </div>
+                      <span class="bi bi-hourglass-split ms-3"></span>
                       <span class="me-3 ms-3">{{getElapsedSinceProcessingStart(item) }}</span>
+                      
+                      <span class="bi bi-clock-fill"></span>
+                      <span class="me-3">ETA  {{getFormattedEta(item.processRequest.eta)}} </span>
+                      
                       <span v-on:click="onProcessingCancelled(item)" v-if="item.status === 2" class="ms-3 link link-danger">Cancel</span>
                     </div>
                     <div v-if="item.status === 1" class="d-flex">
                       <span v-on:click="onRemoveEnqueued(item)" class="ms-3 link link-danger">
                         <span class="bi bi-trash-fill me-1"></span> Remove
                       </span>
+                    </div>
+
+                    <div v-if="item.status === 3 || item.status === 4" class="d-flex">
+                      <span class="bi bi-watch me-2 ms-3"></span>
+                      <span class=" ms-2 ">Elapsed </span>
+                      <span class="ms-3 me-3">{{getElapsedProcessing(item.processRequest)}} </span>
                     </div>
 
                   </div>
@@ -509,7 +626,14 @@ export default defineComponent({
     <div class="row">
       <div class="col">
         <div v-if="selectedItem?.mediaInfo !== undefined && selectedItem?.mediaInfo !== null && selectedItem.file.type === 'file'">
-                
+
+          <div class="form-check">
+            <input v-model="isSample" class="form-check-input" type="checkbox" value="" id="checkSample">
+            <label class="form-check-label" for="checkSample">
+              Sample
+            </label>
+          </div>
+          
           <select class="me-3" v-model="selectedTemplate">
             <option v-for="template in templates" :value="template">{{template.name}}</option>
           </select>
@@ -520,7 +644,6 @@ export default defineComponent({
     </div>
     
   </div>
-  
    
   <div ref="modalProcessInfo" class="modal" tabindex="-1">
     <div class="modal-dialog" >
@@ -552,6 +675,7 @@ export default defineComponent({
   .queue-item-progress-container{
      flex-direction: row;
   }
+  
   .queue-item-progress-bar{
        flex: 1 1 auto;
   }
@@ -559,9 +683,16 @@ export default defineComponent({
   .processing-status{
     cursor: pointer;   
   }
+  
   .modal-content{
     width: 682px;
   }
+  
+  .queue-container {
+    max-height: 544px;
+    overflow: scroll;    
+  }
+  
   #fs-container {   
   }
 </style>

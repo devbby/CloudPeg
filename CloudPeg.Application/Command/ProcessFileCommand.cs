@@ -13,4 +13,6 @@ public class ProcessFileCommand : IRequest
     public List<int> VideoStreams { get; set; }
     public List<int> AudioStreams { get; set; }
     public List<int> SubtitleStreams { get; set; }
+
+    public bool IsSample { get; set; }
 }

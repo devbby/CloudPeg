@@ -1,7 +1,9 @@
 using CloudPeg.Application.Command;
 using CloudPeg.Application.Service;
+using CloudPeg.Application.Utility;
 using CloudPeg.Domain.Model;
 using FFMpegCore;
+using FFMpegCore.Arguments;
 using FFMpegCore.Enums;
 using MediatR;
 
@@ -29,7 +31,7 @@ public class ProcessingService : IProcessingService
                     .Where(x => x.Status == ProcessingStatus.Enqueued)
                     .ToList();
                 
-                if(queue.Count(x => x.Status == ProcessingStatus.Processing) <2)
+                if(queue.Count(x => x.Status == ProcessingStatus.Processing) <1)
                     await ProcessItems(toProcess);    
                     
                 await _mediator.Send(new NotifyProcessingStatusCommand(_processingQueue.GetQueue()));
@@ -60,16 +62,57 @@ public class ProcessingService : IProcessingService
     {
         item.Status =  ProcessingStatus.Processing;
         var template = item.ProcessRequest.Template;
-        
+        var sampleDuration = 5;
         var outputName = item.ProcessRequest.Resource.BaseName.Split(item.ProcessRequest.Resource.Extension)[0] + " "+item.ProcessRequest.Template.EncoderVideoCodec+".mkv";
+        var inputPath = item.ProcessRequest.Resource.RealPath;
+        if(item.ProcessRequest.IsSample)
+        {
+            var info = new FileInfo(item.ProcessRequest.Resource.RealPath);
+            var subOutputName = Path.Join(info.Directory.FullName, info.Name.Split(info.Extension)[0] + "_sample" + info.Extension);
+            // await FFMpeg.SubVideoAsync(item.ProcessRequest.Resource.RealPath,
+            //     subOutputName,
+            //     TimeSpan.FromMinutes(20),
+            //     TimeSpan.FromMinutes(25)
+            // );
+
+
+
+
+
+            var sampleProcessor = FFMpegArguments
+                .FromFileInput(inputPath, true, options =>
+                {
+                    options.WithCustomArgument("-ss 00:05:50");
+                    options.WithCustomArgument("-t 00:05:00");
+
+                })
+                .OutputToFile(subOutputName, true, options =>
+                {
+                    options.WithCustomArgument("-map 0");
+                    options.WithCustomArgument("-c copy");
+                    
+                })
+                .NotifyOnProgress((percentage) =>
+                {
+                    Console.WriteLine($"Creating sample: {percentage}%");
+
+                }, TimeSpan.FromMinutes(sampleDuration))
+                .CancellableThrough(item.ProcessRequest.Token);
+            
+            var sampleFfmpegLine = $"ffmpeg {sampleProcessor.Arguments} ";
+            Console.WriteLine(sampleFfmpegLine);
+            await sampleProcessor.ProcessAsynchronously();
+            inputPath = subOutputName;
+            outputName = item.ProcessRequest.Resource.BaseName.Split(item.ProcessRequest.Resource.Extension)[0] + " "+item.ProcessRequest.Template.EncoderVideoCodec+"_sample.mkv";
+        }
         
         var processor = FFMpegArguments
-            .FromFileInput(item.ProcessRequest.Resource.RealPath, true, options =>
+            .FromFileInput(inputPath, true, options =>
             {
                 
                 // options.WithVideoCodec(item.ProcessRequest.MediaInfo.PrimaryVideoStream.CodecName);
                 
-                if (template.UseHardwareAcceleration)
+                if (template.UseHardwareDecoding)
                 {
                     options.WithHardwareAcceleration(
                         Enum.Parse<HardwareAccelerationDevice>(template.HwDevice));
@@ -78,7 +121,7 @@ public class ProcessingService : IProcessingService
                     {
                         foreach (var argument in template.HwDecoderArguments)
                         {
-                            options.WithCustomArgument(argument);
+                            options.WithCustomArgument(argument.Argument);
                         }
                     }
                     // options.WithCustomArgument("-hwaccel_output_format vaapi");
@@ -91,7 +134,7 @@ public class ProcessingService : IProcessingService
                 {
                     foreach (var argument in template.DecoderArguments)
                     {
-                        options.WithCustomArgument(argument);
+                        options.WithCustomArgument(argument.Argument);
                     }
                 }
                 
@@ -99,19 +142,30 @@ public class ProcessingService : IProcessingService
             .OutputToFile(Path.Join(item.ProcessRequest.ParentDir, outputName),true, options =>
             {
                 
-                if (template.UseHardwareAcceleration)
+                if (template.UseHardwareEncoding)
                 {
                     if(template.HwEncoderArguments != null)
                         foreach (var argument in template.HwEncoderArguments)
                         {
-                            options.WithCustomArgument(argument);
+                            if (argument is IScaleCodecArgument scaleArg)
+                            {
+                                if(item.ProcessRequest.MediaInfo?.PrimaryVideoStream.Height == scaleArg.Height && 
+                                   item.ProcessRequest.MediaInfo?.PrimaryVideoStream.Width == scaleArg.Width)
+                                {
+                                    Console.WriteLine("Skipping scale filter, original and target size match!");
+                                    options.WithCustomArgument(scaleArg.GetScalelessArgument());
+                                    continue;
+                                }
+                            }
+                            options.WithCustomArgument(argument.Argument);
                         }
                 }
                 
-                
+                options.WithCustomArgument("-ac 2");
                 options
                     // .WithVideoCodec("hevc_vaapi")
                     .WithVideoCodec(template.EncoderVideoCodec)
+                    .WithAudioCodec("libopus")
                     .ForceFormat("matroska");          
                     // .WithVideoFilters(filter =>
                     // {
@@ -151,8 +205,13 @@ public class ProcessingService : IProcessingService
                 {
                     item.ProcessRequest.ProcessingStarted = DateTime.Now;
                 }
-                
+
+                var passed = DateTime.Now - item.ProcessRequest.ProcessingStarted;
                 item.ProcessRequest.Progress = percentage;
+                var eta = CloudPeg.Application.Utility.EtaUtility.EstimateRemainingTime(percentage, passed);
+                item.ProcessRequest.Eta =
+                    $"{eta.Hours:00}:{eta.Minutes:00}:{eta.Seconds:00} ";
+                
                 // Console.WriteLine($"Progress: {percentage}%");
                 if (percentage >= 100)
                 {
@@ -160,7 +219,7 @@ public class ProcessingService : IProcessingService
                     item.ProcessRequest.ProcessingEnded = DateTime.Now;
                 }
                 
-            }, item.ProcessRequest.MediaInfo.Duration) 
+            }, item.ProcessRequest.IsSample? TimeSpan.FromMinutes(sampleDuration) : item.ProcessRequest.MediaInfo.Duration) 
             .CancellableThrough(item.ProcessRequest.Token);
 
         var ffmpegLine = $"ffmpeg {processor.Arguments} ";
@@ -170,68 +229,6 @@ public class ProcessingService : IProcessingService
         
         await processor.ProcessAsynchronously();
         
-        // var processor =  FFMpegArguments
-        //     .FromFileInput(item.ProcessRequest.Resource.RealPath, true, options =>
-        //         {
-        //             if (item.ProcessRequest.Template.UseHardwareAcceleration)
-        //             {
-        //                 options.WithHardwareAcceleration(HardwareAccelerationDevice.VAAPI);
-        //                 options.WithCustomArgument("-hwaccel_output_format vaapi");
-        //                 
-        //                 // options.WithVideoCodec(mediaInfo.Format.FormatLongName);
-        //             }
-        //             options.WithCustomArgument("-vaapi_device /dev/dri/renderD128");
-        //             
-        //         }
-        //     )
-        //     // .OutputToFile(Path.Join(processRequest.ParentDir, resource.BaseName+".hevc.converted.mp4"),true, options =>
-        //     .OutputToFile(Path.Join(item.ProcessRequest.ParentDir, "conerted.hevc.converted.mp4"),true, options =>
-        //         {
-        //             // options.WithVideoCodec(FFMpeg.GetCodec("h264_vaapi"));
-        //             // options.WithVideoCodec(FFMpeg.GetCodec("hevc"));
-        //             options.WithVideoCodec(  FFMpeg.GetCodec("hevc_qsv"));
-        //             // options.WithVideoCodec(VideoCodec.LibX265);
-        //            //options.WithCustomArgument("-hwaccel_output_format mp4");
-        //            // options.WithCustomArgument("-vf \"format=nv12,hwupload,scale_vaapi=w=1920:h=1080\"");
-        //            // options.WithCustomArgument("-vf \"format=nv12,hwupload \"");
-        //             options.SelectStreams(
-        //                 item.ProcessRequest.MediaInfo.VideoStreams.Select(x=>x.Index)
-        //                 .Union(item.ProcessRequest.MediaInfo.AudioStreams.Select(x=>x.Index)
-        //                     //.Union(mediaInfo.SubtitleStreams.Select(x=>x.Index))
-        //                 )
-        //             );
-        //             options.WithVideoBitrate((int)item.ProcessRequest.MediaInfo.VideoStreams.First().BitRate);
-        //             options.WithVideoFilters(filter =>
-        //             {
-        //                 filter.Scale(VideoSize.FullHd);
-        //             });
-        //         // .WithSpeedPreset(Speed.Fast)
-        //         // .WithVideoBitrate(4000)
-        //         // .WithCustomArgument("-profile:v high")
-        //         // .WithCustomArgument("-bufsize 8000k")
-        //         // .WithCustomArgument("-g 50")
-        //         //options.WithAudioCodec(AudioCodec.Aac);
-        //         options.WithAudioCodec(FFMpeg.GetCodec("libopus"));
-        //         options.WithAudioFilters(filterOptions =>
-        //             filterOptions.Pan(2, "c0=FL+0.30*FC+0.30*LFE+0.2*BL+0.2*BR|c1=FR+0.30*FC+0.30*LFE+0.2*BL+0.2*BR"));
-        //         // .WithAudioBitrate(128)
-        //         // .WithAudioSamplingRate(44100)
-        //         }
-        //     )
-        //     //.WithLogLevel(FFMpegLogLevel.Error) 
-        //     .NotifyOnProgress((percentage) =>
-        //     {
-        //         item.ProcessRequest.Progress = percentage;
-        //         Console.WriteLine($"Progress: {percentage}%");
-        //     }, item.ProcessRequest.MediaInfo.Duration);
-        //
-        //
-        // Console.WriteLine($"ffmpeg { processor.Arguments } ");
-        // processor.CancellableThrough(item.ProcessRequest.Token);
-        // await processor.ProcessAsynchronously(true, new FFOptions
-        // {
-        //     //LogLevel = FFMpegLogLevel.Error,
-        //     WorkingDirectory = Environment.CurrentDirectory,
-        // });
+        
     }
 }

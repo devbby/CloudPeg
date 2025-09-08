@@ -494,7 +494,11 @@ public class FsService : IFsService
 
     private List<FsStorage> GetStorages()
     {
-        var dir = new DirectoryInfo("fsroot");
+        var rootDir = "fsroot";
+        if ( Environment.GetEnvironmentVariable("container") != null)
+            rootDir = "/fsroot";
+
+        var dir = new DirectoryInfo(rootDir);
         var list = new List<FsStorage>();
         foreach (var file in dir.GetFileSystemInfos())
         {
@@ -504,8 +508,10 @@ public class FsService : IFsService
             }
         }
         #if DEBUG
-        list.Add(new  FsStorage("debug", "/home/danny"));
-        list.Add(new  FsStorage("test", "/mnt/unlocked/libraries"));
+        if(Directory.Exists("/home/danny"))
+            list.Add(new  FsStorage("debug", "/home/danny"));
+        if(Directory.Exists("/mnt/unlocked/libraries"))
+            list.Add(new  FsStorage("test", "/mnt/unlocked/libraries"));
         #endif
 
         return list;

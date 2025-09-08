@@ -4,6 +4,7 @@ import {createApp, defineAsyncComponent} from 'vue'
 import App from './App.vue'
 import "vuefinder/dist/style.css"
 import VueFinder from "vuefinder/dist/vuefinder"
+
 const app = createApp(App)
  
 

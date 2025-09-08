@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization.Metadata;
 using CloudPeg.Application.Command;
 using CloudPeg.Application.Hub;
 using CloudPeg.Application.Service;
@@ -7,11 +8,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    // This resolver enables support for attributes like [JsonDerivedType]
+    options.SerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+});
 builder.Services.AddScoped<IFsService, FsService>();
 builder.Services.AddSingleton<IProcessingQueue, ProcessingQueue>();
 builder.Services.AddSingleton<IProcessingService, ProcessingService>();
 builder.Services.AddSingleton<IProcessingOptionsService, ProcessingOptionsService>();
+builder.Services.AddSingleton<ISupportedCodecService, SupportedCodecService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddMediatR(config =>
@@ -42,6 +48,10 @@ app.MapControllerRoute(
 app.MapHub<VideoProcessorHub>("/VideoProcessor");
 
 await using var scope = app.Services.CreateAsyncScope();
+
+var supportedCodecsService = scope.ServiceProvider.GetService<ISupportedCodecService>();
+// supportedCodecsService?.ScanForSupportedCodecs();
+
 var processingService = scope.ServiceProvider.GetRequiredService<IProcessingService>();
-await processingService.BeginProcessing();
+await  processingService.BeginProcessing();
 app.Run();
