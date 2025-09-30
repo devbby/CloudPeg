@@ -50,7 +50,7 @@ FROM fedora:latest AS final
 RUN dnf update -y && \
     dnf install -y \
     wget \
-    gnupg2 \
+    gnupg2 && \
     dnf clean all
 
 # To install Intel Media VA Driver, you'll need to enable the RPM Fusion non-free repository.
