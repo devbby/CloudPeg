@@ -27,8 +27,14 @@ export default defineComponent({
     selectedTemplate: any,
     isSample: boolean,
     modalProcessInfo: any,
+    modalAddCustomArg: any,
     supportedCodecs: any,
-    version: any
+    version: any,
+    overrideTemplate: boolean,
+    selectedArgType: any,
+    argTypes: any[],
+    addingToArgs: any [],
+    addCustomArgumentText: string,
   }{
     return {
       request: "/fs",
@@ -40,9 +46,15 @@ export default defineComponent({
       isSample: false,
       selectedTemplate: undefined,
       modalProcessInfo: undefined,
+      modalAddCustomArg: undefined,
       selectedQueueItem: undefined,
       supportedCodecs: undefined,
-      version: undefined
+      version: undefined,
+      overrideTemplate: false,
+      selectedArgType: undefined,
+      argTypes: [],
+      addingToArgs: [],
+      addCustomArgumentText: '',
     }
   },
 
@@ -57,6 +69,21 @@ export default defineComponent({
         .build();
 
     this.modalProcessInfo =  this.$refs.modalProcessInfo;
+    this.modalAddCustomArg = this.$refs.modalTemplateCustomArg;
+    
+    this.argTypes = [
+      {
+        name: 'Generic',
+        type: 'generic',
+      },{
+        name: 'Scale VAAPI',
+        type: 'scale_vaapi',
+      },{
+        name: 'Scale QSV',
+        type: 'scale_qsv',
+      },
+        
+    ]
 
     // connection.onclose(error => {
     //   console.assert(connection.state === HubConnectionState.Disconnected);
@@ -92,7 +119,7 @@ export default defineComponent({
      
      
   },
-
+ // modalTemplateCustomArg
   computed:{
 
   },
@@ -172,6 +199,44 @@ export default defineComponent({
       $(this.modalProcessInfo).modal("show")
       
     },
+
+
+    showAddTemplateArgumentModal(args: any){
+      
+      if(args === null || args === undefined)
+        args = [];
+      this.addingToArgs = args;
+      $(this.modalAddCustomArg).modal("show")
+      
+    },
+    onAddCustomArg(){
+
+      this.addingToArgs.push( {
+        
+        'type': this.selectedArgType.type,
+        argument: this.addCustomArgumentText
+      })
+      $(this.modalAddCustomArg).modal("hide")
+    },
+
+    onDeleteHwDecoderArg( arg: any) {
+      let itemIndex = this.selectedTemplate.hwDecoderArguments.indexOf(arg)
+      this.selectedTemplate.hwDecoderArguments.splice(itemIndex, 1)
+    },
+    
+    onDeleteHwEncoderArg(arg: any) {
+      let itemIndex = this.selectedTemplate.hwEncoderArguments.indexOf(arg)
+      this.selectedTemplate.hwEncoderArguments.splice(itemIndex, 1)
+      
+    },
+    
+    onDeleteGenericArg(arg: any) {
+
+      let itemIndex = this.selectedTemplate.decoderArguments.indexOf(arg)
+      this.selectedTemplate.decoderArguments.splice(itemIndex, 1)
+    },
+    
+    
     
     async onProcessingCancelled(item: QueueItem){
       
@@ -416,7 +481,7 @@ export default defineComponent({
       return `${this.pad(duration.hours(), 2) }:${this.pad(duration.minutes(), 2)}:${this.pad(duration.seconds(), 2)}`
     },
 
-      pad(num: number, size: number) {
+    pad(num: number, size: number) {
         let s = "000000000" + num;
         return s.substr(s.length-size);
       }
@@ -642,7 +707,118 @@ export default defineComponent({
         </div>
       </div>
     </div>
+
+    <div class="row" v-if="selectedTemplate !== undefined">
+      <div class="col">
+ 
+        <div class="form-check mt-3">
+          <input v-model="overrideTemplate" class="form-check-input" type="checkbox" value="" id="checkOverrideTemplate">
+          <label class="form-check-label" for="checkOverrideTemplate">
+            Override Template?
+          </label>
+        </div>
+
+        <div :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate }" >
+          
+          <div class="input-group input-group-sm mt-2 mb-1">
+            <span class="input-group-text"  >Name</span>
+            <input type="text" class="form-control" v-model="selectedTemplate.name"  disabled  >
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <span class="input-group-text"  >Codec</span>
+            <input type="text" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-control':true }" v-model="selectedTemplate.encoderVideoCodec"   >
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <span class="input-group-text"  >HW Device</span>
+            <input type="text" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-control':true }" v-model="selectedTemplate.hwDevice"   >
+          </div>
+          
+          <div class="grid template-grid">
+            <div>
+              <div class="form-check" >
+                <input v-model="selectedTemplate.useHardwareDecoding" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-check-input':true }" type="checkbox" value="" id="checkOverrideTemplate">
+                <label class="form-check-label" for="checkOverrideTemplate">
+                  Use HW Decode
+                </label>
+              </div>
+              
+              <div>
+                <div v-for="arg in selectedTemplate.hwDecoderArguments">
+                   <div class="input-group input-group-sm mb-1">
+                     <span class="input-group-text"  >{{arg.type}}</span>
+                     <input type="text" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-control':true }" v-model="arg.argument"   >
+                     <button type="button" v-on:click="onDeleteHwDecoderArg(arg)" :disabled="!overrideTemplate" :class="{'template-arg-delete':true, 'btn':true, 'btn-danger':true, 'disabled': !overrideTemplate, 'form-control':true }">
+                       <span class="bi bi-trash-fill"> </span>
+                     </button>  
+                   </div>
+                </div>
+
+                <button v-if="overrideTemplate" v-on:click="showAddTemplateArgumentModal(selectedTemplate.hwDecoderArguments)"  class="btn btn-outline-secondary">
+                  <span class="bi bi-plus-circle"> </span>
+                </button>
+              </div>
+              
+            </div>
+            
+            <div>
+              <div class="form-check">
+                <input v-model="selectedTemplate.useHardwareEncoding" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-check-input':true }" type="checkbox" value="" id="checkOverrideTemplate">
+                <label class="form-check-label" for="checkOverrideTemplate">
+                  Use HW Encode
+                </label>
+              </div>
+
+              <div>
+              <div v-for="arg in selectedTemplate.hwEncoderArguments">
+                <div class="input-group input-group-sm mb-1">
+                  <span class="input-group-text"  >{{arg.type}}</span>
+                  <input type="text" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-control':true }" v-model="arg.argument"   >
+                  <button type="button" v-on:click="onDeleteHwEncoderArg(arg)" :disabled="!overrideTemplate" :class="{'template-arg-delete':true, 'btn':true, 'btn-danger':true, 'disabled': !overrideTemplate, 'form-control':true }">
+                    <span class="bi bi-trash-fill"> </span>
+                  </button>
+                </div> 
+               </div>
+
+                <button  v-if="overrideTemplate" v-on:click="showAddTemplateArgumentModal(selectedTemplate.hwEncoderArguments)" class="btn btn-outline-secondary">
+                  <span class="bi bi-plus-circle"> </span>
+                </button> 
+                
+              </div>
+              
+            </div>
+            
+            
+            <div :class="{ 'disabled': !overrideTemplate }">
+              <div>
+                <div v-for="arg in selectedTemplate.decoderArguments">
+                  <div class="input-group input-group-sm mb-1">
+                    <span class="input-group-text"  >{{arg.type}}</span>
+                    <input type="text" :disabled="!overrideTemplate" :class="{ 'disabled': !overrideTemplate, 'form-control':true }" v-model="arg.argument"   >
+                    <button  type="button" v-on:click="onDeleteGenericArg(arg)" :disabled="!overrideTemplate" :class="{'template-arg-delete':true, 'btn':true, 'btn-danger':true, 'disabled': !overrideTemplate, 'form-control':true }">
+                      <span class="bi bi-trash-fill"> </span>
+                    </button>  
+                  </div>
+                </div>
+
+                <button v-if="overrideTemplate" v-on:click="showAddTemplateArgumentModal(selectedTemplate.decoderArguments)" class="btn btn-outline-secondary">
+                  <span class="bi bi-plus-circle"> </span>
+                </button>
+                
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
     
+    <div class="row">
+      <div class="col">
+        <div style="height: 300px"></div>
+      </div>
+    </div>
   </div>
    
   <div ref="modalProcessInfo" class="modal" tabindex="-1">
@@ -664,9 +840,53 @@ export default defineComponent({
     </div>
   </div>
 
+  <div ref="modalTemplateCustomArg" class="modal" tabindex="-1">
+    <div class="modal-dialog" >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+             
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group input-group-sm mb-1">
+            <span class="input-group-text"  >Param Type</span>
+            <select v-model="selectedArgType" class="form-select"> 
+              <option v-for="type in argTypes"  :value="type">{{type.name}}</option>
+            </select>
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <span class="input-group-text"  >Parameter</span>
+            <input type="text"   :class="{  'form-control':true }" v-model="addCustomArgumentText"   >
+          </div>
+
+
+          <button  type="button" v-on:click="onAddCustomArg()"  :disabled="!overrideTemplate" :class="{'template-arg-delete':true, 'btn':true, 'btn-danger':true, 'disabled': !overrideTemplate, 'form-control':true }">
+            Add
+          </button>
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <style scoped>
+
+  .template-grid{
+    display: grid;
+    grid-template-areas: 'aaa';
+    grid-gap: 1rem;
+    grid-template-columns: auto auto auto;
+  }
+  
+  .template-arg-delete{
+    max-width: 2rem;
+  }
   
   .queue-item-file{
     font-size: 0.8rem;

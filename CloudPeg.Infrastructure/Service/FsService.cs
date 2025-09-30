@@ -512,6 +512,9 @@ public class FsService : IFsService
             list.Add(new  FsStorage("debug", "/home/danny"));
         if(Directory.Exists("/mnt/unlocked/libraries"))
             list.Add(new  FsStorage("test", "/mnt/unlocked/libraries"));
+        if(Directory.Exists("/mnt/unlocked2/libraries"))
+            list.Add(new  FsStorage("test2", "/mnt/unlocked2/libraries"));
+        
         #endif
 
         return list;
